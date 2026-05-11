@@ -86,7 +86,7 @@ export function useForumPost(postId: number) {
       id: -Date.now(), // Temporary negative ID, will be replaced on reconcile
       post_id: postId,
       parent_comment_id: parentCommentId,
-      user_id: user?.id ?? 0,
+      user_id: Number(user?.id ?? 0),
       user_name: user?.name || user?.email || "Bạn",
       user_email: user?.email || "",
       body,
