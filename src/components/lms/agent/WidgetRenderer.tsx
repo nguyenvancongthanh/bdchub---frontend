@@ -39,6 +39,9 @@ const WIDGET_MAP: Record<string, React.ComponentType<any>> = {
   FlashcardPreview: dynamic(() =>
     import("./widgets/FlashcardWidget").then((m) => m.FlashcardWidget),
   ),
+  FlashcardDeck: dynamic(() =>
+    import("./widgets/FlashcardWidget").then((m) => m.FlashcardWidget),
+  ),
 };
 
 
