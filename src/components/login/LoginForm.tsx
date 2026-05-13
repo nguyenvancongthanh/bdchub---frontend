@@ -55,6 +55,10 @@ export default function LoginForm() {
                       backdrop-blur-xl
                       border border-slate-200 dark:border-blue-500/15
                       shadow-lg dark:shadow-[0_8px_40px_rgba(37,99,235,0.08)]
+                      hover:shadow-xl hover:shadow-blue-500/5
+                      dark:hover:shadow-[0_12px_50px_rgba(37,99,235,0.12)]
+                      dark:hover:border-blue-500/25
+                      hover:-translate-y-0.5
                       transition-all duration-300">
         <Mascot isBlindfolded={isPasswordFocused && !showPassword} />
 

@@ -7,7 +7,7 @@ import { useTheme } from 'next-themes';
 class Star {
   x: number;
   y: number;
-  z: number; // depth layer 0-1
+  z: number;
   size: number;
   baseAlpha: number;
   twinkleSpeed: number;
@@ -17,111 +17,97 @@ class Star {
     this.x = Math.random() * w;
     this.y = Math.random() * h;
     this.z = Math.random();
-    this.size = 0.4 + this.z * 2;
-    this.baseAlpha = 0.2 + this.z * 0.6;
-    this.twinkleSpeed = 0.3 + Math.random() * 1.5;
+    // Smaller, subtler stars — feel like real night sky
+    this.size = 0.3 + this.z * 1.4;
+    this.baseAlpha = 0.15 + this.z * 0.5;
+    this.twinkleSpeed = 0.2 + Math.random() * 0.8;
     this.twinklePhase = Math.random() * Math.PI * 2;
   }
 
   draw(ctx: CanvasRenderingContext2D, time: number, isDark: boolean) {
     const twinkle = Math.sin(time * this.twinkleSpeed + this.twinklePhase);
-    const alpha = this.baseAlpha * (0.5 + 0.5 * twinkle) * (isDark ? 1 : 0.25);
+    const alpha = this.baseAlpha * (0.6 + 0.4 * twinkle) * (isDark ? 1 : 0.18);
     if (alpha < 0.02) return;
+
+    // Bright stars get a soft glow halo
+    if (isDark && this.z > 0.7) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(210, 60%, 80%, ${alpha * 0.08})`;
+      ctx.fill();
+    }
 
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     if (isDark) {
-      const hue = 200 + this.z * 30; // blue → cyan
-      ctx.fillStyle = `hsla(${hue}, 70%, 80%, ${alpha})`;
+      // Warmer color mix: white → blue → cyan by depth
+      const hue = 200 + this.z * 20;
+      const lightness = 85 + this.z * 10;
+      ctx.fillStyle = `hsla(${hue}, 40%, ${lightness}%, ${alpha})`;
     } else {
-      ctx.fillStyle = `hsla(215, 50%, 60%, ${alpha * 0.6})`;
+      ctx.fillStyle = `hsla(215, 30%, 65%, ${alpha * 0.5})`;
     }
     ctx.fill();
   }
 }
 
-/* ─── Nebula Blob ───────────────────────────────────────────────────── */
+/* ─── Nebula Blob — softer, more organic ─────────────────────────────── */
 class Nebula {
   cx: number;
   cy: number;
   rx: number;
   ry: number;
   hue: number;
-  driftX: number;
-  driftY: number;
   phase: number;
   speed: number;
 
   constructor(w: number, h: number) {
     this.cx = Math.random() * w;
     this.cy = Math.random() * h;
-    this.rx = 100 + Math.random() * 250;
-    this.ry = 80 + Math.random() * 200;
-    this.hue = [210, 230, 270][Math.floor(Math.random() * 3)]; // blue, indigo, violet
-    this.driftX = (Math.random() - 0.5) * 0.15;
-    this.driftY = (Math.random() - 0.5) * 0.1;
+    this.rx = 200 + Math.random() * 300;
+    this.ry = 150 + Math.random() * 250;
+    this.hue = [210, 235, 260][Math.floor(Math.random() * 3)];
     this.phase = Math.random() * Math.PI * 2;
-    this.speed = 0.1 + Math.random() * 0.2;
+    this.speed = 0.05 + Math.random() * 0.1;
   }
 
   draw(ctx: CanvasRenderingContext2D, time: number, w: number, h: number, isDark: boolean) {
-    const x = this.cx + Math.sin(time * this.speed + this.phase) * 40;
-    const y = this.cy + Math.cos(time * this.speed * 0.7 + this.phase) * 30;
+    const x = this.cx + Math.sin(time * this.speed + this.phase) * 30;
+    const y = this.cy + Math.cos(time * this.speed * 0.6 + this.phase) * 20;
 
-    // Wrap around
     const wx = ((x % w) + w) % w;
     const wy = ((y % h) + h) % h;
 
-    const alpha = isDark ? 0.06 : 0.02;
-    const grad = ctx.createRadialGradient(wx, wy, 0, wx, wy, Math.max(this.rx, this.ry));
-    grad.addColorStop(0, `hsla(${this.hue}, 60%, 50%, ${alpha})`);
-    grad.addColorStop(0.5, `hsla(${this.hue}, 50%, 40%, ${alpha * 0.4})`);
-    grad.addColorStop(1, `hsla(${this.hue}, 40%, 30%, 0)`);
+    const alpha = isDark ? 0.04 : 0.012;
+    const r = Math.max(this.rx, this.ry);
+    const grad = ctx.createRadialGradient(wx, wy, 0, wx, wy, r);
+    grad.addColorStop(0, `hsla(${this.hue}, 50%, 45%, ${alpha})`);
+    grad.addColorStop(0.4, `hsla(${this.hue}, 40%, 35%, ${alpha * 0.3})`);
+    grad.addColorStop(1, `hsla(${this.hue}, 30%, 25%, 0)`);
 
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.ellipse(wx, wy, this.rx, this.ry, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-
-  update() {
-    this.cx += this.driftX;
-    this.cy += this.driftY;
-  }
 }
 
-/* ─── Shooting Star ─────────────────────────────────────────────────── */
+/* ─── Shooting Star — cleaner trail ─────────────────────────────────── */
 class ShootingStar {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  length: number;
-  active: boolean;
-
-  constructor() {
-    this.x = 0;
-    this.y = 0;
-    this.vx = 0;
-    this.vy = 0;
-    this.life = 0;
-    this.maxLife = 0;
-    this.length = 0;
-    this.active = false;
-  }
+  x = 0; y = 0; vx = 0; vy = 0;
+  life = 0; maxLife = 0; length = 0;
+  active = false;
 
   spawn(w: number, h: number) {
-    this.x = Math.random() * w * 0.8;
-    this.y = Math.random() * h * 0.4;
-    const angle = Math.PI / 6 + Math.random() * Math.PI / 6;
-    const speed = 4 + Math.random() * 6;
+    this.x = Math.random() * w * 0.7;
+    this.y = Math.random() * h * 0.3;
+    const angle = Math.PI / 7 + Math.random() * Math.PI / 5;
+    const speed = 5 + Math.random() * 5;
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
-    this.maxLife = 40 + Math.random() * 40;
+    this.maxLife = 30 + Math.random() * 30;
     this.life = this.maxLife;
-    this.length = 30 + Math.random() * 50;
+    this.length = 40 + Math.random() * 60;
     this.active = true;
   }
 
@@ -133,22 +119,32 @@ class ShootingStar {
     if (this.life <= 0) this.active = false;
   }
 
-  draw(ctx: CanvasRenderingContext2D, isDark: boolean) {
+  draw(ctx: CanvasRenderingContext2D) {
     if (!this.active) return;
-    const alpha = (this.life / this.maxLife) * (isDark ? 0.6 : 0.15);
-    const tailX = this.x - (this.vx / Math.sqrt(this.vx ** 2 + this.vy ** 2)) * this.length;
-    const tailY = this.y - (this.vy / Math.sqrt(this.vx ** 2 + this.vy ** 2)) * this.length;
+    const progress = this.life / this.maxLife;
+    const alpha = progress * 0.5;
+    const mag = Math.sqrt(this.vx ** 2 + this.vy ** 2);
+    const tailX = this.x - (this.vx / mag) * this.length * progress;
+    const tailY = this.y - (this.vy / mag) * this.length * progress;
 
     const grad = ctx.createLinearGradient(tailX, tailY, this.x, this.y);
-    grad.addColorStop(0, `hsla(200, 80%, 80%, 0)`);
-    grad.addColorStop(1, `hsla(200, 80%, 80%, ${alpha})`);
+    grad.addColorStop(0, `hsla(200, 80%, 90%, 0)`);
+    grad.addColorStop(0.7, `hsla(200, 70%, 85%, ${alpha * 0.3})`);
+    grad.addColorStop(1, `hsla(200, 80%, 95%, ${alpha})`);
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(tailX, tailY);
     ctx.lineTo(this.x, this.y);
     ctx.stroke();
+
+    // Bright head dot
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 1, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(200, 80%, 95%, ${alpha})`;
+    ctx.fill();
   }
 }
 
@@ -188,49 +184,68 @@ const Background: React.FC = () => {
 
     function initEntities() {
       const area = width * height;
-      // Stars — denser than old particles for depth
-      const starCount = Math.max(40, Math.round(area / 2500));
+      // Moderate density — enough for depth, not cluttered
+      const starCount = Math.max(30, Math.round(area / 4000));
       starsRef.current = Array.from({ length: starCount }, () => new Star(width, height));
-
-      // Nebulae — 3 max
       nebulaeRef.current = Array.from({ length: 3 }, () => new Nebula(width, height));
-
-      // Shooting stars pool
-      shootingRef.current = Array.from({ length: 3 }, () => new ShootingStar());
+      shootingRef.current = Array.from({ length: 2 }, () => new ShootingStar());
     }
 
     let lastShoot = 0;
 
     function animate(time: number) {
       if (!ctx) return;
-      const t = time * 0.001; // seconds
+      const t = time * 0.001;
       const isDark = resolvedTheme === 'dark';
 
       ctx.clearRect(0, 0, width, height);
 
-      // Parallax offset from mouse (very subtle)
-      const mx = (mouseRef.current.x / width - 0.5) * 6;
-      const my = (mouseRef.current.y / height - 0.5) * 4;
+      // Mouse parallax — very gentle
+      const mx = (mouseRef.current.x / width - 0.5) * 4;
+      const my = (mouseRef.current.y / height - 0.5) * 3;
 
-      // Draw nebulae
+      // --- Nebulae (deepest layer) ---
       ctx.save();
-      ctx.translate(mx * 0.3, my * 0.3);
+      ctx.translate(mx * 0.2, my * 0.2);
       for (const neb of nebulaeRef.current) {
-        neb.update();
         neb.draw(ctx, t, width, height, isDark);
       }
       ctx.restore();
 
-      // Draw stars with parallax by depth
+      // --- Stars with depth parallax ---
       for (const star of starsRef.current) {
         ctx.save();
-        ctx.translate(mx * star.z, my * star.z);
+        ctx.translate(mx * star.z * 0.5, my * star.z * 0.5);
         star.draw(ctx, t, isDark);
         ctx.restore();
       }
 
-      // Shooting stars
-      if (isDark && t - lastShoot > 4 + Math.random() * 6) {
+      // --- Star-to-star constellations (nearby pairs) ---
+      if (isDark) {
+        const stars = starsRef.current;
+        const constellDist = 100;
+        const constellDistSq = constellDist * constellDist;
+        ctx.lineWidth = 0.4;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < stars.length; i++) {
+          for (let j = i + 1; j < stars.length; j++) {
+            const dx = stars[i].x - stars[j].x;
+            const dy = stars[i].y - stars[j].y;
+            const distSq = dx * dx + dy * dy;
+            if (distSq < constellDistSq && stars[i].z > 0.4 && stars[j].z > 0.4) {
+              const alpha = (1 - distSq / constellDistSq) * 0.06;
+              ctx.strokeStyle = `hsla(210, 50%, 80%, ${alpha})`;
+              ctx.beginPath();
+              ctx.moveTo(stars[i].x + mx * stars[i].z * 0.5, stars[i].y + my * stars[i].z * 0.5);
+              ctx.lineTo(stars[j].x + mx * stars[j].z * 0.5, stars[j].y + my * stars[j].z * 0.5);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // --- Shooting stars (dark only, rare) ---
+      if (isDark && t - lastShoot > 6 + Math.random() * 8) {
         const idle = shootingRef.current.find(s => !s.active);
         if (idle) {
           idle.spawn(width, height);
@@ -239,28 +254,34 @@ const Background: React.FC = () => {
       }
       for (const ss of shootingRef.current) {
         ss.update();
-        ss.draw(ctx, isDark);
+        if (isDark) ss.draw(ctx);
       }
 
-      // Mouse-connected constellation (nearest stars)
-      if (mouseRef.current.x > 0 && mouseRef.current.y > 0) {
-        const grabDist = 120;
-        ctx.lineWidth = 1;
+      // --- Mouse constellation — connect nearby stars to cursor ---
+      if (mouseRef.current.x > 0 && mouseRef.current.y > 0 && isDark) {
+        const grabDist = 140;
+        ctx.lineWidth = 0.6;
+        ctx.lineCap = 'round';
         for (const star of starsRef.current) {
-          const dx = star.x + mx * star.z - mouseRef.current.x;
-          const dy = star.y + my * star.z - mouseRef.current.y;
+          const sx = star.x + mx * star.z * 0.5;
+          const sy = star.y + my * star.z * 0.5;
+          const dx = sx - mouseRef.current.x;
+          const dy = sy - mouseRef.current.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < grabDist) {
-            const alpha = (1 - dist / grabDist) * (isDark ? 0.3 : 0.08);
-            ctx.strokeStyle = isDark
-              ? `hsla(200, 70%, 70%, ${alpha})`
-              : `hsla(215, 50%, 60%, ${alpha})`;
+            const alpha = (1 - dist / grabDist) * 0.2;
+            ctx.strokeStyle = `hsla(200, 60%, 75%, ${alpha})`;
             ctx.beginPath();
             ctx.moveTo(mouseRef.current.x, mouseRef.current.y);
-            ctx.lineTo(star.x + mx * star.z, star.y + my * star.z);
+            ctx.lineTo(sx, sy);
             ctx.stroke();
           }
         }
+        // Cursor dot
+        ctx.beginPath();
+        ctx.arc(mouseRef.current.x, mouseRef.current.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'hsla(200, 60%, 80%, 0.15)';
+        ctx.fill();
       }
 
       rafRef.current = requestAnimationFrame(animate);

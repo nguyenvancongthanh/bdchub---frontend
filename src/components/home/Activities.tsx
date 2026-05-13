@@ -29,10 +29,15 @@ export default function Activities() {
                                               border border-slate-200 dark:border-blue-500/10
                                               overflow-hidden
                                               shadow-sm dark:shadow-none
-                                              hover:shadow-md dark:hover:border-blue-500/25
+                                              hover:-translate-y-1.5
+                                              hover:shadow-xl hover:shadow-blue-500/5
+                                              dark:hover:shadow-[0_12px_40px_rgba(37,99,235,0.08)]
+                                              hover:border-blue-300/60 dark:hover:border-blue-500/25
                                               transition-all duration-300 group">
               <div className="h-48 bg-slate-200 dark:bg-[#0A1628] relative overflow-hidden">
                 <SafeImage src={activity.imageUrl} alt={activity.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                {/* Subtle overlay on hover */}
+                <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 dark:group-hover:bg-cyan-400/5 transition-colors duration-300" />
               </div>
               <div className="p-6">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
@@ -42,7 +47,7 @@ export default function Activities() {
                                  border border-blue-200 dark:border-blue-500/20">
                   {activity.type}
                 </span>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{activity.title}</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors duration-300">{activity.title}</h3>
                 <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3">{activity.description}</p>
               </div>
             </div>
