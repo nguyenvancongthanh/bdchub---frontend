@@ -32,7 +32,7 @@ export default function Navbar() {
     { href: "/#about", label: "Về CLB" },
     { href: "/#activities", label: "Hoạt Động" },
     { href: "/#projects", label: "Dự Án" },
-    { href: "/#members", label: "Thành Viên" }
+    // { href: "/#members", label: "Thành Viên" }
   ];
 
   return (
@@ -48,7 +48,7 @@ export default function Navbar() {
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
             <Logo />
             <div className="hidden sm:block">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Big Data Club</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">BDC Hub</h2>
               <p className="text-xs text-blue-600 dark:text-cyan-400 font-semibold tracking-wide uppercase">Think Big • Speak Data</p>
             </div>
           </div>

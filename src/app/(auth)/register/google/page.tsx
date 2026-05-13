@@ -9,7 +9,7 @@ export default function GoogleRegisterPage() {
         <Logo />
         <div className="flex flex-col items-start">
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Big Data Club
+            BDC Hub
           </h2>
           <p className="mt-1 text-sm font-semibold text-blue-600 uppercase tracking-widest">
             Think Big • Speak Data

@@ -11,15 +11,6 @@ export default function Hero() {
   return (
     <section className="relative min-h-[75vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 text-center mt-8">
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
-                        bg-blue-50 dark:bg-blue-900/30
-                        border border-blue-200 dark:border-blue-500/20
-                        text-xs font-semibold uppercase tracking-wider
-                        text-blue-600 dark:text-cyan-400">
-          Think Big • Speak Data
-        </div>
-
         {/* Title — gradient in dark mode */}
         <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight">
           <span className="text-slate-900 dark:text-transparent dark:bg-gradient-to-r dark:from-blue-400 dark:to-cyan-400 dark:bg-clip-text">
