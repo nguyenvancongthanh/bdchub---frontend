@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
+import { FaFacebook, FaGithub, FaGlobe } from "react-icons/fa";
 import bdc from "@/assets/bdclogo.png";
 import SafeImage from "../common/SafeImage";
 
 const SOCIALS = [
   { Icon: FaFacebook, href: "https://facebook.com/BDCofHCMUT", label: "Facebook" },
-  { Icon: FaTwitter,  href: "https://twitter.com",             label: "Twitter"  },
-  { Icon: FaInstagram,href: "https://instagram.com",           label: "Instagram"},
-  { Icon: FaLinkedin, href: "https://linkedin.com",            label: "LinkedIn" },
+  { Icon: FaGithub,  href: "https://github.com/Big-Data-Club", label: "Github"  },
+  { Icon: FaGlobe,   href: "https://bdc.hpcc.vn",              label: "BDC Web" },
 ];
 
 const Footer: React.FC = () => {
