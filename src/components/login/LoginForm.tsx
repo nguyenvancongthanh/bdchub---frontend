@@ -73,7 +73,13 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               onFocus={() => setIsPasswordFocused(false)}
               placeholder="nguyenvana@hcmut.edu.vn"
-              className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full rounded-xl px-4 py-3.5
+                         bg-slate-50 border border-slate-300
+                         text-slate-900 placeholder:text-slate-400
+                         focus:bg-white focus:outline-none
+                         focus:ring-2 focus:ring-blue-500/20
+                         focus:border-blue-500
+                         transition-all duration-200"
               required
             />
           </div>
@@ -87,13 +93,19 @@ export default function LoginForm() {
               onFocus={() => setIsPasswordFocused(true)}
               onBlur={() => setIsPasswordFocused(false)}
               placeholder="••••••••"
-              className="w-full border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full rounded-xl px-4 py-3.5 pr-12
+                         bg-slate-50 border border-slate-300
+                         text-slate-900 placeholder:text-slate-400
+                         focus:bg-white focus:outline-none
+                         focus:ring-2 focus:ring-blue-500/20
+                         focus:border-blue-500
+                         transition-all duration-200"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-[38px] text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+              className="absolute right-4 top-[38px] text-slate-400 hover:text-slate-600 transition-colors focus:outline-none active:scale-95"
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
@@ -116,7 +128,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
           >
             {loading ? <Spinner /> : "Đăng nhập"}
           </button>
@@ -124,12 +136,10 @@ export default function LoginForm() {
 
         {/* Divider */}
         <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-3 bg-white text-slate-400 font-medium">hoặc</span>
-          </div>
+          <hr className="border-slate-200" />
+          <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 px-3 bg-white text-xs text-slate-400 font-medium">
+            hoặc
+          </span>
         </div>
 
         {/* Google Login */}

@@ -94,6 +94,8 @@ export function GoogleRegisterForm() {
     );
   }
 
+  const inputClasses = "w-full rounded-xl px-4 py-3.5 bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200";
+
   return (
     <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mx-auto">
       {/* Google profile header */}
@@ -126,7 +128,7 @@ export function GoogleRegisterForm() {
             type="email"
             value={profile.email}
             disabled
-            className="w-full border border-slate-200 rounded-xl p-3.5 text-slate-500 bg-slate-100 cursor-not-allowed"
+            className="w-full rounded-xl px-4 py-3.5 bg-slate-100 border border-slate-200 text-slate-500 cursor-not-allowed"
           />
         </div>
 
@@ -138,7 +140,7 @@ export function GoogleRegisterForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Nguyễn Văn A"
-            className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className={inputClasses}
             required
           />
         </div>
@@ -153,7 +155,7 @@ export function GoogleRegisterForm() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="2212345"
-            className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className={inputClasses}
             required
           />
         </div>
@@ -164,7 +166,7 @@ export function GoogleRegisterForm() {
           <select
             value={team}
             onChange={(e) => setTeam(e.target.value)}
-            className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className={inputClasses}
             required
           >
             <option value="" disabled>Chọn ban</option>
@@ -180,7 +182,7 @@ export function GoogleRegisterForm() {
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className={inputClasses}
             required
           >
             <option value="" disabled>Chọn hệ</option>
@@ -193,7 +195,7 @@ export function GoogleRegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
         >
           {loading ? <Spinner /> : "Đăng ký"}
         </button>

@@ -48,9 +48,9 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
       role="dialog"
       aria-labelledby="forgot-password-title"
     >
-      {/* Backdrop */}
+      {/* Backdrop — Design Rhythm standard */}
       <div
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -69,7 +69,7 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
 
         {/* Icon + Header */}
         <div className="text-center mb-7">
-          <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 bg-blue-50 border border-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <Mail className="w-7 h-7 text-blue-600" />
           </div>
           <h2 id="forgot-password-title" className="text-xl font-bold text-slate-900">
@@ -93,7 +93,7 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
             <button
               type="button"
               onClick={handleClose}
-              className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3 shadow-sm transition-all active:scale-95"
+              className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3 shadow-sm transition-all duration-200 active:scale-95"
             >
               Đã hiểu
             </button>
@@ -124,7 +124,14 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={state === "loading"}
                 placeholder="nguyenvana@hcmut.edu.vn"
-                className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-60"
+                className="w-full rounded-xl px-4 py-3.5
+                           bg-slate-50 border border-slate-300
+                           text-slate-900 placeholder:text-slate-400
+                           focus:bg-white focus:outline-none
+                           focus:ring-2 focus:ring-blue-500/20
+                           focus:border-blue-500
+                           transition-all duration-200
+                           disabled:opacity-60"
                 required
                 autoFocus
               />
@@ -133,7 +140,7 @@ export default function ForgotPasswordModal({ open, onClose }: ForgotPasswordMod
             <button
               type="submit"
               disabled={state === "loading"}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {state === "loading" ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Đang gửi...</>

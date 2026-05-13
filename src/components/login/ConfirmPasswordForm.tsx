@@ -72,7 +72,7 @@ export default function ConfirmPasswordForm({ token, type = "change" }: ConfirmP
   return (
     <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mx-auto">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-5">
+        <div className="w-16 h-16 bg-blue-50 border border-blue-200 rounded-full flex items-center justify-center mx-auto mb-5">
           {isReset
             ? <RotateCcw className="w-8 h-8 text-blue-600" />
             : <KeyRound className="w-8 h-8 text-blue-600" />
@@ -112,7 +112,13 @@ export default function ConfirmPasswordForm({ token, type = "change" }: ConfirmP
               onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
               disabled={loading}
               placeholder="Nhập mật khẩu mới"
-              className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full rounded-xl px-4 py-3.5
+                         bg-slate-50 border border-slate-300
+                         text-slate-900 placeholder:text-slate-400
+                         focus:bg-white focus:outline-none
+                         focus:ring-2 focus:ring-blue-500/20
+                         focus:border-blue-500
+                         transition-all duration-200"
               required
             />
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
@@ -128,7 +134,13 @@ export default function ConfirmPasswordForm({ token, type = "change" }: ConfirmP
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               disabled={loading}
               placeholder="Nhập lại mật khẩu mới"
-              className="w-full border border-slate-300 rounded-xl p-3.5 text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full rounded-xl px-4 py-3.5
+                         bg-slate-50 border border-slate-300
+                         text-slate-900 placeholder:text-slate-400
+                         focus:bg-white focus:outline-none
+                         focus:ring-2 focus:ring-blue-500/20
+                         focus:border-blue-500
+                         transition-all duration-200"
               required
             />
           </div>
@@ -136,7 +148,7 @@ export default function ConfirmPasswordForm({ token, type = "change" }: ConfirmP
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-3.5 shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
           >
             {loading ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> Đang cập nhật...</>
