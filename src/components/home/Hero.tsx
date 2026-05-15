@@ -9,6 +9,23 @@ export default function Hero() {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
 
+  const handleScrollToAbout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const element = document.getElementById("about");
+    if (element) {
+      const offset = 80; // Offset for Navbar
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
+  };
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -16,7 +33,7 @@ export default function Hero() {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 1.4, // Shifted from 0.2
+        delayChildren: 1.4,
       },
     },
   };
@@ -28,13 +45,13 @@ export default function Hero() {
       y: 0,
       transition: {
         duration: 0.5,
-        ease: [0.16, 1, 0.3, 1], // ease-out-expo
+        ease: [0.16, 1, 0.3, 1],
       },
     },
   };
 
   return (
-    <section className="relative min-h-[75vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 text-center mt-8">
+    <section id="hero" className="relative min-h-[75vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 text-center mt-8">
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -66,6 +83,7 @@ export default function Hero() {
         >
           <a
             href="#about"
+            onClick={handleScrollToAbout}
             aria-label="Tìm hiểu thêm về Big Data Club"
             className="group px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl
                        shadow-sm hover:shadow-lg hover:shadow-blue-600/20
@@ -134,6 +152,7 @@ export default function Hero() {
         >
           <a 
             href="#about" 
+            onClick={handleScrollToAbout}
             aria-label="Cuộn xuống để xem thêm"
             className="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
           >

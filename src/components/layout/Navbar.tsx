@@ -42,7 +42,12 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (window.location.hash) {
+              window.history.replaceState(null, "", window.location.pathname);
+            }
+          }}>
             <Logo />
             <div className="hidden sm:block">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">BDC Hub</h2>

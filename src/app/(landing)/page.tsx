@@ -4,6 +4,7 @@ import About from "@/components/home/About";
 import Activities from "@/components/home/Activities";
 import Projects from "@/components/home/Projects";
 import Members from "@/components/home/Members";
+import ScrollReset from "@/components/common/ScrollReset";
 
 export const metadata: Metadata = {
   title: "BDC Hub | Big Data Club - HCMUT",
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="w-full pb-12">
+      <ScrollReset />
       <Hero />
       <About />
       <Activities />

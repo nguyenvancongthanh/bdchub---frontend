@@ -347,7 +347,7 @@ function draw(time: number) {
                       ctx.strokeStyle = config.isDark ? `hsla(210, 50%, 85%, ${alpha})` : `hsla(220, 50%, 55%, ${alpha})`;
                       ctx.beginPath(); ctx.moveTo(six, siy); ctx.lineTo(sjx, sjy); ctx.stroke();
 
-                      if (elapsed > totalBloomTime && Math.random() < 0.0002) {
+                      if (elapsed > totalBloomTime && Math.random() < 0.0006) {
                         const p = getPulse();
                         p.x1 = six; p.y1 = siy; p.x2 = sjx; p.y2 = sjy;
                         p.targetIdx = j; p.progress = 0; p.speed = 0.02 + Math.random() * 0.03;
