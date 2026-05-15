@@ -16,7 +16,7 @@ export default function Hero() {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.2,
+        delayChildren: 1.4, // Shifted from 0.2
       },
     },
   };
@@ -39,7 +39,7 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.6, delay: 0.8, ease: "easeOut" }}
         >
           {/* Title — gradient in dark mode. Added pb-2 to prevent clipping of descenders like 'g' */}
           <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-slate-900 
@@ -52,7 +52,7 @@ export default function Hero() {
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 1.0 }} // Shifted from 0.2
           className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed"
         >
           Câu lạc bộ học thuật hàng đầu tại HCMUT chuyên nghiên cứu và phát triển trong lĩnh vực Dữ liệu lớn, Trí tuệ nhân tạo, Điện toán đám mây và Điện toán lượng tử.
@@ -61,7 +61,7 @@ export default function Hero() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
+          transition={{ duration: 0.4, delay: 1.2 }} // Shifted from 0.4
           className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"
         >
           <a
@@ -129,7 +129,7 @@ export default function Hero() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1 }}
+          transition={{ duration: 1, delay: 2.0 }} // Shifted from 1
           className="pt-8 flex justify-center"
         >
           <a 
