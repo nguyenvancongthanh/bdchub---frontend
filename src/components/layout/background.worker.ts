@@ -11,7 +11,7 @@ interface WorkerConfig {
   prefersReducedMotion: boolean;
 }
 
-let config: WorkerConfig = {
+const config: WorkerConfig = {
   width: 0,
   height: 0,
   isDark: true,
@@ -37,8 +37,8 @@ interface Pulse {
   speed: number;
   active: boolean;
 }
-let pulses: Pulse[] = []; 
-let pulsePool: Pulse[] = [];
+const pulses: Pulse[] = []; 
+const pulsePool: Pulse[] = [];
 
 function getPulse(): Pulse {
   const p = pulsePool.pop();
@@ -69,8 +69,8 @@ let pairGeneration = 0;
 let connectedBuf: Int32Array;
 let connectedLen = 0;
 
-let mouse = { x: 0, y: 0 };
-let mouseFollow = { x: 0, y: 0 };
+const mouse = { x: 0, y: 0 };
+const mouseFollow = { x: 0, y: 0 };
 let lastTime = 0;
 let lastShootTime = 0;
 let startTime = 0;
