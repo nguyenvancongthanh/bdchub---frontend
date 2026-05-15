@@ -70,6 +70,16 @@ const MicroLessonHistoryModal = dynamic(
   { ssr: false },
 );
 
+const GenerateMicroQuizzesModal = dynamic(
+  () => import("@/components/lms/teacher/micro/GenerateMicroQuizzesModal").then(m => ({ default: m.GenerateMicroQuizzesModal })),
+  { ssr: false },
+);
+
+const MicroQuizzesDrawer = dynamic(
+  () => import("@/components/lms/teacher/micro/MicroQuizzesDrawer").then(m => ({ default: m.MicroQuizzesDrawer })),
+  { ssr: false },
+);
+
 // ─── Content type icon map ────────────────────────────────────────────────────
 
 const CONTENT_ICON: Record<string, React.ReactNode> = {
@@ -118,6 +128,12 @@ export function ContentTab({ courseId, sections, onSectionsChange }: ContentTabP
   const [microPresetContentId, setMicroPresetContentId] = useState<number | undefined>();
   const [microPresetSectionId, setMicroPresetSectionId] = useState<number | undefined>();
   const [activeMicroJobId, setActiveMicroJobId]   = useState<number | null>(null);
+
+  // Micro-quiz modal / drawer state
+  const [showQuizModal, setShowQuizModal]             = useState(false);
+  const [quizPresetContentId, setQuizPresetContentId] = useState<number | undefined>();
+  const [quizPresetSectionId, setQuizPresetSectionId] = useState<number | undefined>();
+  const [activeQuizJobId, setActiveQuizJobId]         = useState<number | null>(null);
 
   // ── Content loading ─────────────────────────────────────────────────────────
 
@@ -223,6 +239,18 @@ export function ContentTab({ courseId, sections, onSectionsChange }: ContentTabP
           >
             <Sparkles className="w-4 h-4" />
             Tạo bài học micro
+          </button>
+          <button
+            onClick={() => {
+              setQuizPresetContentId(undefined);
+              setQuizPresetSectionId(undefined);
+              setShowQuizModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+            title="AI sẽ tạo bộ câu hỏi trắc nghiệm bao quát toàn bộ kiến thức"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Tạo micro quiz
           </button>
           <PrimaryBtn
             size="sm"
@@ -387,17 +415,30 @@ export function ContentTab({ courseId, sections, onSectionsChange }: ContentTabP
                             {/* Hover actions */}
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               {(c.type === "DOCUMENT" || c.type === "VIDEO" || c.type === "IMAGE") && (
-                                <button
-                                  title="Tạo bài học micro từ file này"
-                                  className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-950/30 text-violet-600 dark:text-violet-400"
-                                  onClick={() => {
-                                    setMicroPresetContentId(c.id);
-                                    setMicroPresetSectionId(sec.id);
-                                    setShowMicroModal(true);
-                                  }}
-                                >
-                                  <Sparkles className="w-3.5 h-3.5" />
-                                </button>
+                                <>
+                                  <button
+                                    title="Tạo bài học micro từ file này"
+                                    className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-950/30 text-violet-600 dark:text-violet-400"
+                                    onClick={() => {
+                                      setMicroPresetContentId(c.id);
+                                      setMicroPresetSectionId(sec.id);
+                                      setShowMicroModal(true);
+                                    }}
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    title="Tạo micro quiz từ file này"
+                                    className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400"
+                                    onClick={() => {
+                                      setQuizPresetContentId(c.id);
+                                      setQuizPresetSectionId(sec.id);
+                                      setShowQuizModal(true);
+                                    }}
+                                  >
+                                    <HelpCircle className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
                               )}
                               <button
                                 title="Xem nội dung"
@@ -515,6 +556,29 @@ export function ContentTab({ courseId, sections, onSectionsChange }: ContentTabP
           jobId={activeMicroJobId}
           sections={sections}
           onClose={() => setActiveMicroJobId(null)}
+          onPublished={(sectionId) => reloadSectionContent(sectionId)}
+        />
+      )}
+
+      {showQuizModal && (
+        <GenerateMicroQuizzesModal
+          courseId={courseId}
+          sections={sections}
+          presetContentId={quizPresetContentId}
+          presetSectionId={quizPresetSectionId}
+          onClose={() => setShowQuizModal(false)}
+          onJobCreated={(jobId) => {
+            setShowQuizModal(false);
+            setActiveQuizJobId(jobId);
+          }}
+        />
+      )}
+
+      {activeQuizJobId !== null && (
+        <MicroQuizzesDrawer
+          jobId={activeQuizJobId}
+          sections={sections}
+          onClose={() => setActiveQuizJobId(null)}
           onPublished={(sectionId) => reloadSectionContent(sectionId)}
         />
       )}
