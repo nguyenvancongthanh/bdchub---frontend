@@ -61,8 +61,13 @@ let gridNext: Int32Array;
 let gridCols = 0;
 let gridRows = 0;
 
-// Constellation pair bitmask (Optimized O(1) lookup)
-let pairMask: Uint8Array; 
+// Constellation pair bitmask (Optimized O(1) lookup with Generation Counter)
+let pairMask: Uint16Array; 
+let pairGeneration = 0;
+
+// Hover buffer (Zero-Allocation)
+let connectedBuf: Int32Array;
+let connectedLen = 0;
 
 let mouse = { x: 0, y: 0 };
 let mouseFollow = { x: 0, y: 0 };
@@ -196,7 +201,8 @@ function initStars(w: number, h: number) {
   gridRows = Math.ceil(h / CONSTELL_DIST) + 1;
   gridHead = new Int32Array(gridCols * gridRows);
   gridNext = new Int32Array(starCount);
-  pairMask = new Uint8Array(starCount * starCount);
+  pairMask = new Uint16Array(starCount * starCount);
+  connectedBuf = new Int32Array(starCount);
 
   const fixedNebulae = [
     { x: 0.5,  y: 0.25, rx: 550, ry: 450, hueIdx: 3, z: 0.1 }, // Behind Hero (Cyan)
@@ -259,17 +265,26 @@ function update(time: number) {
     s.life--;
     if (s.life <= 0) s.active = false;
 
-    // Pulse nearby stars
+    // Pulse nearby stars using Spatial Grid
     const sDistSq = 150 * 150;
-    for (let i = 0; i < starCount; i++) {
-      const off = i * STAR_STRIDE;
-      const z = starsData[off + 2];
-      const sx = starsData[off + 0] + mxOffset * z * 0.6;
-      const sy = starsData[off + 1] + myOffset * z * 0.6;
-      const dx = sx - s.x;
-      const dy = sy - s.y;
-      if (dx * dx + dy * dy < sDistSq) {
-        starsData[off + 9] = Math.min(1.0, starsData[off + 9] + 0.2);
+    const sgx = Math.floor(s.x / CONSTELL_DIST);
+    const sgy = Math.floor(s.y / CONSTELL_DIST);
+    
+    for (let ny = Math.max(0, sgy - 1); ny <= Math.min(gridRows - 1, sgy + 1); ny++) {
+      for (let nx = Math.max(0, sgx - 1); nx <= Math.min(gridCols - 1, sgx + 1); nx++) {
+        let i = gridHead[ny * gridCols + nx];
+        while (i !== -1) {
+          const off = i * STAR_STRIDE;
+          const z = starsData[off + 2];
+          const sx = starsData[off + 0] + mxOffset * z * 0.6;
+          const sy = starsData[off + 1] + myOffset * z * 0.6;
+          const dx = sx - s.x;
+          const dy = sy - s.y;
+          if (dx * dx + dy * dy < sDistSq) {
+            starsData[off + 9] = Math.min(1.0, starsData[off + 9] + 0.2);
+          }
+          i = gridNext[i];
+        }
       }
     }
   }
@@ -279,20 +294,25 @@ function update(time: number) {
     starsData[i * STAR_STRIDE + 9] *= 0.98;
   }
 
-  // Update Pulses (using Pool)
+  // Update Pulses (using Pool & Swap-and-Pop)
   for (let i = pulses.length - 1; i >= 0; i--) {
     const p = pulses[i];
     p.progress += p.speed;
     if (p.progress >= 1) {
       starsData[p.targetIdx * STAR_STRIDE + 9] = Math.min(1.0, starsData[p.targetIdx * STAR_STRIDE + 9] + 0.4);
       releasePulse(p);
-      pulses.splice(i, 1);
+      // Swap with last for O(1) removal
+      pulses[i] = pulses[pulses.length - 1];
+      pulses.pop();
     }
   }
 }
 
 function draw(time: number) {
   if (!ctx) return;
+  // Sync state update with draw loop
+  update(time);
+  
   const t = time * 0.001;
   const elapsed = t - startTime;
 
@@ -342,7 +362,6 @@ function draw(time: number) {
   
   for (let i = 0; i < starCount; i++) {
     const off = i * STAR_STRIDE;
-    // Include ALL stars in the grid for mouse interaction
     const sx = starsData[off + 0] + mxOffset * starsData[off + 2] * 0.6;
     const sy = starsData[off + 1] + myOffset * starsData[off + 2] * 0.6;
     
@@ -358,11 +377,10 @@ function draw(time: number) {
   // --- Constellations (Optimized Batch Drawing) ---
   ctx.lineCap = 'round';
   const breathing = Math.sin(t * 1.2) * 0.3 + 0.7;
-  pairMask.fill(0);
+  // Generation counter instead of fill(0)
+  pairGeneration = (pairGeneration + 1) % 65535;
 
   ctx.lineWidth = config.isDark ? 0.5 : 0.4;
-  // Use a fixed average alpha for the batch stroke to minimize state changes
-  // We'll use globalAlpha for the breathing effect
   ctx.globalAlpha = breathing; 
   ctx.strokeStyle = config.isDark ? `hsla(210, 50%, 85%, 0.05)` : `hsla(220, 50%, 55%, 0.025)`;
   ctx.beginPath();
@@ -382,8 +400,8 @@ function draw(time: number) {
               while (j !== -1) {
                 if (i < j && starsData[j * STAR_STRIDE + 2] >= 0.45) {
                   const maskIdx = i * starCount + j;
-                  if (pairMask[maskIdx] === 0) {
-                    pairMask[maskIdx] = 1;
+                  if (pairMask[maskIdx] !== pairGeneration) {
+                    pairMask[maskIdx] = pairGeneration;
 
                     const offI = i * STAR_STRIDE;
                     const offJ = j * STAR_STRIDE;
@@ -423,23 +441,21 @@ function draw(time: number) {
 
   // --- Mouse interaction (Grid-Optimized & Sparse Web) ---
   if (mouse.x > 0 && mouse.y > 0) {
-    const grabDist = 125; // Reduced from 160 for better focus
+    const grabDist = 160; // Aligned with docs
     const grabDistSq = grabDist * grabDist;
     const mgx = Math.floor(mouseFollow.x / CONSTELL_DIST);
     const mgy = Math.floor(mouseFollow.y / CONSTELL_DIST);
     
-    const connected: number[] = [];
+    connectedLen = 0;
 
     ctx.beginPath();
-    ctx.lineWidth = config.isDark ? 0.8 : 0.6; // Slightly thinner
+    ctx.lineWidth = config.isDark ? 0.8 : 0.6; 
 
-    // Use radius 2 because grabDist (125) > CONSTELL_DIST (110)
     for (let ny = Math.max(0, mgy - 2); ny <= Math.min(gridRows - 1, mgy + 2); ny++) {
       for (let nx = Math.max(0, mgx - 2); nx <= Math.min(gridCols - 1, mgx + 2); nx++) {
         let i = gridHead[ny * gridCols + nx];
         while (i !== -1) {
           const off = i * STAR_STRIDE;
-          // Depth filter: Only stars at z > 0.3 participate in hover
           const z = starsData[off + 2];
           if (z > 0.15) {
             const sx = starsData[off + 0] + mxOffset * z * 0.6;
@@ -452,10 +468,12 @@ function draw(time: number) {
             const bloomFactor = Math.max(0, Math.min(1, (elapsed - bloomDelay) * 1.5));
             
             if (bloomFactor >= 0.2 && dSq < grabDistSq) {
-              connected.push(i);
+              if (connectedLen < connectedBuf.length) {
+                connectedBuf[connectedLen++] = i;
+              }
               const dist = Math.sqrt(dSq);
-              // Intensity fades faster with distance (power of 2)
-              const hoverBoost = Math.pow(1 - dist / grabDist, 4) * 0.4;
+              // Intensity falloff power aligned with docs (8)
+              const hoverBoost = Math.pow(1 - dist / grabDist, 8) * 0.4;
               starsData[off + 9] = Math.min(1.0, starsData[off + 9] + hoverBoost);
               
               ctx.moveTo(mouseFollow.x, mouseFollow.y);
@@ -469,15 +487,14 @@ function draw(time: number) {
     ctx.strokeStyle = config.isDark ? `hsla(200, 60%, 80%, 0.18)` : `hsla(220, 55%, 50%, 0.12)`;
     ctx.stroke();
 
-    // Connect grabbed stars (Sparse Web: Max 2 connections per star)
+    // Connect grabbed stars (Sparse Web)
     ctx.beginPath();
     ctx.lineWidth = config.isDark ? 0.4 : 0.3;
-    for (let i = 0; i < connected.length; i++) {
+    for (let i = 0; i < connectedLen; i++) {
       let connections = 0;
-      // Only look for a few neighbors to keep the web sparse and clean
-      for (let j = i + 1; j < connected.length && connections < 2; j++) {
-        const offI = connected[i] * STAR_STRIDE;
-        const offJ = connected[j] * STAR_STRIDE;
+      for (let j = i + 1; j < connectedLen && connections < 2; j++) {
+        const offI = connectedBuf[i] * STAR_STRIDE;
+        const offJ = connectedBuf[j] * STAR_STRIDE;
         const zI = starsData[offI + 2], zJ = starsData[offJ + 2];
         const six = starsData[offI + 0] + mxOffset * zI * 0.6, siy = starsData[offI + 1] + myOffset * zI * 0.6;
         const sjx = starsData[offJ + 0] + mxOffset * zJ * 0.6, sjy = starsData[offJ + 1] + myOffset * zJ * 0.6;
@@ -532,46 +549,32 @@ function draw(time: number) {
     }
   }
 
-  // --- Shooting Stars (Optimized with Fade-in/out) ---
+  // --- Shooting Stars ---
   for (const s of shootingStars) {
     if (!s.active) continue;
-    
-    const p = 1 - (s.life / s.maxLife); // progress 0 -> 1
-    const fadeIn = Math.min(1, p / 0.15); // Fade in over first 15%
-    const fadeOut = (1 - p); // Linear fade out
+    const p = 1 - (s.life / s.maxLife);
+    const fadeIn = Math.min(1, p / 0.15);
+    const fadeOut = (1 - p);
     const alpha = fadeIn * fadeOut;
-    
     const length = 60 + Math.random() * 40;
     const tailX = s.x - s.vx * (length / 20) * (1 - p * 0.5);
     const tailY = s.y - s.vy * (length / 20) * (1 - p * 0.5);
 
-    ctx.strokeStyle = config.isDark 
-      ? `hsla(200, 80%, 95%, ${alpha * 0.5})` 
-      : `hsla(220, 70%, 50%, ${alpha * 0.3})`;
+    ctx.strokeStyle = config.isDark ? `hsla(200, 80%, 95%, ${alpha * 0.5})` : `hsla(220, 70%, 50%, ${alpha * 0.3})`;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(s.x, s.y);
     ctx.lineTo(tailX, tailY);
     ctx.stroke();
 
-    // Small glowing head for the shooting star
     ctx.beginPath();
     ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
-    ctx.fillStyle = config.isDark 
-      ? `hsla(200, 80%, 100%, ${alpha})` 
-      : `hsla(220, 70%, 45%, ${alpha})`;
+    ctx.fillStyle = config.isDark ? `hsla(200, 80%, 100%, ${alpha})` : `hsla(220, 70%, 45%, ${alpha})`;
     ctx.fill();
   }
 
   requestAnimationFrame(draw);
 }
-
-// Update call frequency (Internal loop for state)
-function stateLoop() {
-  update(performance.now());
-  setTimeout(stateLoop, 16);
-}
-stateLoop();
 
 // --- Message Handling ---
 self.onmessage = (e) => {
