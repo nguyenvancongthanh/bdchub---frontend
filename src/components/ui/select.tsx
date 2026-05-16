@@ -19,7 +19,20 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      // Base layout
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border px-3 py-2 text-sm shadow-sm",
+      // Light mode — solid input background so it's never transparent
+      "bg-slate-50 border-slate-300 text-slate-900",
+      // Dark mode
+      "dark:bg-[#0D192E] dark:border-blue-500/20 dark:text-slate-100",
+      // Placeholder
+      "data-[placeholder]:text-slate-400 dark:data-[placeholder]:text-slate-500",
+      // Focus
+      "focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500",
+      "dark:focus:ring-cyan-400/20 dark:focus:border-cyan-400/50",
+      // States
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "[&>span]:line-clamp-1 transition-all duration-200",
       className
     )}
     {...props}
@@ -75,7 +88,11 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-xl border",
+        "relative z-50 min-w-[8rem] rounded-xl border",
+        // Cap height to available viewport space (Radix provides this var); fallback to 384px.
+        // Use overflow-hidden — NOT overflow-y-auto — so Radix's own ScrollUpButton/ScrollDownButton
+        // handle scrolling correctly. overflow-y-auto on the Content breaks their logic.
+        "max-h-[min(384px,var(--radix-select-content-available-height,384px))] overflow-hidden overflow-x-hidden",
         // Light mode
         "bg-white border-slate-200 text-slate-900 shadow-lg",
         // Dark mode — explicit BDC Design Rhythm tokens (bg-popover CSS variable unreliable in dark LMS)
