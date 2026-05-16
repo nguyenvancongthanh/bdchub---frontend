@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchRoles, deleteRole, fetchPermissions, fetchLmsRoleMappings, Role, Permission } from "@/lib/admin/rolesApi";
-import { Loader2, Plus, Edit2, Trash2, Shield, Settings2, RefreshCcw } from "lucide-react";
+import { permissionService, LmsRole } from "@/services/permissionService";
+import { Loader2, Plus, Edit2, Trash2, Shield, Settings2, RefreshCcw, Lock } from "lucide-react";
 import RoleModal from "./RoleModal";
 import LmsMappingModal from "./LmsMappingModal";
+import PermissionEditor from "./PermissionEditor";
 
 export default function RoleManager() {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -18,6 +20,14 @@ export default function RoleManager() {
 
   const [isMappingModalOpen, setIsMappingModalOpen] = useState(false);
   const [mappingRole, setMappingRole] = useState<Role | null>(null);
+
+  // LMS Permissions section
+  const [lmsRoles, setLmsRoles] = useState<LmsRole[]>([]);
+  const [lmsRolesLoading, setLmsRolesLoading] = useState(true);
+  const [lmsRolesError, setLmsRolesError] = useState<string | null>(null);
+
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
+  const [permissionLmsRole, setPermissionLmsRole] = useState<LmsRole | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -37,8 +47,23 @@ export default function RoleManager() {
     }
   };
 
+  const loadLmsRoles = async () => {
+    setLmsRolesLoading(true);
+    setLmsRolesError(null);
+    try {
+      const data = await permissionService.getLmsRoles();
+      setLmsRoles(data);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to load LMS roles";
+      setLmsRolesError(msg);
+    } finally {
+      setLmsRolesLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadLmsRoles();
   }, []);
 
   const handleDelete = async (role: Role) => {
@@ -76,119 +101,195 @@ export default function RoleManager() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-500" />
-            Role & Access Management
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Configure dynamic roles, permissions, and LMS service mappings.
-          </p>
+    <div className="space-y-8">
+      {/* ─── Section 1: Auth Roles (Java) ─────────────────────────────── */}
+      <div className="space-y-6">
+        {/* Header section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+              <Shield className="w-6 h-6 text-blue-500" />
+              Auth Roles
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              System roles from the Auth service. Configure display names and LMS service mappings.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setEditingRole(null);
+              setIsRoleModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 shadow-sm shadow-blue-600/20 active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            Create New Role
+          </button>
         </div>
-        <button
-          onClick={() => {
-            setEditingRole(null);
-            setIsRoleModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 shadow-sm shadow-blue-600/20 active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          Create New Role
-        </button>
-      </div>
 
-      {/* Data Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-                <th className="px-6 py-4">Role Name</th>
-                <th className="px-6 py-4">Display Name</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">LMS Mappings</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {roles.map((role) => (
-                <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                      {role.name}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-slate-900 dark:text-slate-50">{role.displayName}</p>
-                    {role.description && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">{role.description}</p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {role.isSystem ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                        System
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                        Custom
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {lmsMappings[role.name]?.map((lmsRole) => (
-                        <span key={lmsRole} className="px-2 py-0.5 text-xs font-medium rounded-md bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50">
-                          {lmsRole}
-                        </span>
-                      ))}
-                      {(!lmsMappings[role.name] || lmsMappings[role.name].length === 0) && (
-                        <span className="text-xs text-slate-400 italic">None</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setMappingRole(role);
-                          setIsMappingModalOpen(true);
-                        }}
-                        className="p-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
-                        title="Configure LMS Mappings"
-                      >
-                        <Settings2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingRole(role);
-                          setIsRoleModalOpen(true);
-                        }}
-                        className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                        title="Edit Role"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(role)}
-                        disabled={role.isSystem}
-                        className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                        title={role.isSystem ? "Cannot delete system role" : "Delete Role"}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        {/* Auth Roles Table */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+                  <th className="px-6 py-4">Role Name</th>
+                  <th className="px-6 py-4">Display Name</th>
+                  <th className="px-6 py-4">Type</th>
+                  <th className="px-6 py-4">LMS Mappings</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                {roles.map((role) => (
+                  <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                        {role.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-slate-900 dark:text-slate-50">{role.displayName}</p>
+                      {role.description && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">{role.description}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {role.isSystem ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                          System
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                          Custom
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {lmsMappings[role.name]?.map((lmsRole) => (
+                          <span key={lmsRole} className="px-2 py-0.5 text-xs font-medium rounded-md bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50">
+                            {lmsRole}
+                          </span>
+                        ))}
+                        {(!lmsMappings[role.name] || lmsMappings[role.name].length === 0) && (
+                          <span className="text-xs text-slate-400 italic">None</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setMappingRole(role);
+                            setIsMappingModalOpen(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                          title="Configure LMS Mappings"
+                        >
+                          <Settings2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingRole(role);
+                            setIsRoleModalOpen(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          title="Edit Role"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(role)}
+                          disabled={role.isSystem}
+                          className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                          title={role.isSystem ? "Cannot delete system role" : "Delete Role"}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
+      {/* ─── Section 2: LMS Permissions ─────────────────────────────── */}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+              <Lock className="w-6 h-6 text-indigo-500" />
+              LMS Permissions
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Granular permission assignments for each LMS role. Controls what each role can do inside the Learning Management System.
+            </p>
+          </div>
+          <button
+            onClick={loadLmsRoles}
+            className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            title="Refresh LMS Roles"
+          >
+            <RefreshCcw className="w-4 h-4" />
+          </button>
+        </div>
+
+        {lmsRolesLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+          </div>
+        ) : lmsRolesError ? (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-800/50 text-sm">
+            {lmsRolesError}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {lmsRoles.map((lmsRole) => (
+              <div
+                key={lmsRole.id}
+                className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1.5">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50">
+                      {lmsRole.name}
+                    </span>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                      {lmsRole.display_name}
+                    </p>
+                    {lmsRole.description && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                        {lmsRole.description}
+                      </p>
+                    )}
+                  </div>
+                  {lmsRole.is_system && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md shrink-0">
+                      System
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setPermissionLmsRole(lmsRole);
+                    setIsPermissionModalOpen(true);
+                  }}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-xl font-medium text-sm transition-colors active:scale-95 border border-indigo-200/50 dark:border-indigo-800/30"
+                >
+                  <Shield className="w-4 h-4" />
+                  Configure Permissions
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
       {isRoleModalOpen && (
         <RoleModal
           role={editingRole}
@@ -203,6 +304,14 @@ export default function RoleManager() {
           currentMappings={lmsMappings[mappingRole.name] || []}
           onClose={() => setIsMappingModalOpen(false)}
           onSuccess={loadData}
+        />
+      )}
+
+      {isPermissionModalOpen && permissionLmsRole && (
+        <PermissionEditor
+          lmsRole={permissionLmsRole}
+          isOpen={isPermissionModalOpen}
+          onClose={() => setIsPermissionModalOpen(false)}
         />
       )}
     </div>
