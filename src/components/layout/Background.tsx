@@ -91,6 +91,9 @@ const Background: React.FC = () => {
 
   return (
     <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1.2, ease: "easeOut" }}
       className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-background"
     >
       <canvas
