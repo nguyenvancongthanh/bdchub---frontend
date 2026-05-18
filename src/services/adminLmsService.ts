@@ -31,7 +31,7 @@ export const adminLmsService = {
 
   /** Assign a role manually to a user */
   assignRole: async (userId: number | string, role: string): Promise<void> => {
-    await lmsApiClient.post(`/admin/users/${userId}/roles`, { role });
+    await lmsApiClient.put(`/admin/users/${userId}/roles`, { role });
   },
 
   /** Remove a manually assigned role from a user */
