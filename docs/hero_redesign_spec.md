@@ -9,9 +9,10 @@ This document presents the UX/UI redesign concept, structural architecture, and 
 The BDC Hub landing page serves as the digital front-door for the Big Data Club at HCMUT. The previous design relied on a standard center-stacked layout with high-redundancy CTAs and blocky static stats, leading to cognitive friction and diminished user conversion.
 
 The redesign achieves three core objectives:
-*   **Resolve CTA Redundancy**: Align the landing page navigation to steer users toward a primary conversion target rather than repeating local scroll links.
-*   **Establish Tech-Forward Premium Aesthetics**: Integrate statistics dynamically to reflect the club’s technical identity in Big Data, AI, and Cloud Computing.
-*   **Optimize Multi-Device Responsive Flows**: Ensure an equally captivating, high-performance experience on both ultra-wide screens and compact mobile devices.
+
+* **Resolve CTA Redundancy**: Align the landing page navigation to steer users toward a primary conversion target rather than repeating local scroll links.
+* **Establish Tech-Forward Premium Aesthetics**: Integrate statistics dynamically to reflect the club’s technical identity in Big Data, AI, and Cloud Computing.
+* **Optimize Multi-Device Responsive Flows**: Ensure an equally captivating, high-performance experience on both ultra-wide screens and compact mobile devices.
 
 ---
 
@@ -19,7 +20,7 @@ The redesign achieves three core objectives:
 
 Before the redesign, a guest user encountered multiple competing actions pointing to identical sections:
 
-```
+```plaintext
 [Navbar]               "Về CLB" ---> Scrolls to #about
                        "Dự Án"  ---> Scrolls to #projects
 
@@ -29,10 +30,11 @@ Before the redesign, a guest user encountered multiple competing actions pointin
 [Scroll Indicator]     "Khám phá" (Text Label) ------> Scrolls to #about
 ```
 
-### The Cognitive Pitfalls:
-1.  **Hick's Law Violation**: Presenting multiple visually weighted options that trigger the exact same local navigation scroll dilutes user focus and decreases overall click-through rates.
-2.  **Lack of Active Conversion Goals**: Inactive local scrolling buttons make the site feel passive. A premium SaaS-like hub should drive high-value actions (e.g., student registration, learning management platform sign-in).
-3.  **Visual Overcrowding**: Large, heavy static blocks for stats beneath the CTAs consume excessive vertical screen space (above the fold) without establishing an organic connection to the hero copy.
+### The Cognitive Pitfalls
+
+1. **Hick's Law Violation**: Presenting multiple visually weighted options that trigger the exact same local navigation scroll dilutes user focus and decreases overall click-through rates.
+2. **Lack of Active Conversion Goals**: Inactive local scrolling buttons make the site feel passive. A premium SaaS-like hub should drive high-value actions (e.g., student registration, learning management platform sign-in).
+3. **Visual Overcrowding**: Large, heavy static blocks for stats beneath the CTAs consume excessive vertical screen space (above the fold) without establishing an organic connection to the hero copy.
 
 ---
 
@@ -40,7 +42,7 @@ Before the redesign, a guest user encountered multiple competing actions pointin
 
 To solve these bottlenecks, the layout is redesigned into a modern **2-Column Split-Screen Grid Layout** on desktop screens, separating informational hierarchy from interactive visual showcase.
 
-```
+```plaintext
 +------------------------------------------------------------+
 |                        BDC HUB NAVBAR                      |
 +------------------------------------------------------------+
@@ -61,24 +63,28 @@ To solve these bottlenecks, the layout is redesigned into a modern **2-Column Sp
 +------------------------------------------------------------+
 ```
 
-### 3.1 left Column: Conversion-Oriented Copy & Actions
-*   **Title & Text Alignment**: Aligned to the left (`lg:text-left lg:items-start`) on desktop, and centered on mobile to prioritize read-flow.
-*   **Primary Conversion Gateways (CTAs)**:
-    *   **Unauthenticated Users (Guests)**:
-        *   *Primary (Filled Blue)*: **"Bắt đầu ngay" (Start Now)** -> Redirects to `/login`. Drives user registration and onboarding to the LMS.
-        *   *Secondary (Minimal Outlined)*: **"Xem dự án" (View Projects)** -> Scrolls to `#projects`.
-    *   **Authenticated Users (Members)**:
-        *   *Primary (Filled Blue)*: **"Bảng quản trị" (Dashboard)** -> Redirects to `/dashboard`.
-        *   *Secondary (Minimal Outlined)*: **"Về BDC Hub" (About BDC)** -> Scrolls to `#about`.
+### 3.1 Left Column: Conversion-Oriented Copy & Actions
+
+* **Title & Text Alignment**: Aligned to the left (`lg:text-left lg:items-start`) on desktop, and centered on mobile to prioritize read-flow.
+* **Primary Conversion Gateways (CTAs)**:
+  * **Unauthenticated Users (Guests)**:
+    * *Primary (Filled Blue)*: **"Bắt đầu ngay" (Start Now)** -> Redirects to `/login`. Drives user registration and onboarding to the LMS.
+    * *Secondary (Minimal Outlined)*: **"Xem dự án" (View Projects)** -> Scrolls to `#projects`.
+  * **Authenticated Users (Members)**:
+    * *Primary (Filled Blue)*: **"Bảng quản trị" (Dashboard)** -> Redirects to `/dashboard`.
+    * *Secondary (Minimal Outlined)*: **"Về BDC Hub" (About BDC)** -> Scrolls to `#about`.
 
 ### 3.2 Right Column: Interactive Ambient Visual Core & Glassmorphic Stats
+
 Instead of basic grids, club statistics are integrated into an organic **visual showcase area**:
-*   **Visual Core**: Built with layered ambient glowing gradients and dual dashed/double concentric borders rotating in opposite directions.
-*   **Glassmorphic Floating Badges**:
-    *   Four statistic cards (**100+ Connections**, **4+ Years**, **10+ R&D Projects**, **5+ Key Awards**) float around the core.
-    *   **Style**: Ultra-light transparent glassmorphism (`backdrop-blur-md bg-white/40 dark:bg-[#0F1E35]/40 border border-slate-200/50 dark:border-blue-500/10`) with glowing hover shadows.
+
+* **Visual Core**: Built with layered ambient glowing gradients and dual dashed/double concentric borders rotating in opposite directions.
+* **Glassmorphic Floating Badges**:
+  * Four statistic cards (**100+ Connections**, **4+ Years**, **10+ R&D Projects**, **5+ Key Awards**) float around the core.
+  * **Style**: Ultra-light transparent glassmorphism (`backdrop-blur-md bg-white/40 dark:bg-[#0F1E35]/40 border border-slate-200/50 dark:border-blue-500/10`) with glowing hover shadows.
 
 ### 3.3 Progressive Scroll Indicator
+
 The duplicate text label "Khám phá" is removed. It is replaced with a silent **mouse scroll wheel simulation** with an animated scroll dot moving downwards, offering a luxury, minimalist hint of progression.
 
 ---
@@ -88,13 +94,16 @@ The duplicate text label "Khám phá" is removed. It is replaced with a silent *
 All animations are powered by **Framer Motion** to guarantee native-like rendering speeds and zero rendering lag.
 
 ### 4.1 Entrance Choreography
-*   **Staggered Cascade**: Children elements animate sequentially to create a clean, intentional entry flow.
-*   **Easing Curve**: Leverages a premium out-expo bezier curve `[0.16, 1, 0.3, 1]` for ultra-smooth zoom transitions on the title and description block.
+
+* **Staggered Cascade**: Children elements animate sequentially to create a clean, intentional entry flow.
+* **Easing Curve**: Leverages a premium out-expo bezier curve `[0.16, 1, 0.3, 1]` for ultra-smooth zoom transitions on the title and description block.
 
 ### 4.2 Floating Badges Physics (Continuous Loops)
+
 To achieve a natural floating effect, each statistic card is split into two concentric containers:
-1.  **Entrance Wrapper**: Handles the staggered entrance transition.
-2.  **Continuous Physics Loop**: Animates continuously using infinite repeats and staggered cycle durations to prevent synchronous motion.
+
+1. **Entrance Wrapper**: Handles the staggered entrance transition.
+2. **Continuous Physics Loop**: Animates continuously using infinite repeats and staggered cycle durations to prevent synchronous motion.
 
 ```typescript
 // Staggered Floating Constants
@@ -107,6 +116,7 @@ const statsData = [
 ```
 
 Each inner badge loops perpetually:
+
 ```typescript
 animate={{ y: [0, -12, 0] }}
 transition={{

@@ -71,7 +71,6 @@ let connectedLen = 0;
 
 const mouse = { x: 0, y: 0 };
 const mouseFollow = { x: 0, y: 0 };
-let lastTime = 0;
 let lastShootTime = 0;
 let initTime = 0;
 let totalBloomTime = 0; // Dynamic duration for star materialization

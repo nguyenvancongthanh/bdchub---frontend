@@ -59,7 +59,6 @@ export const IsolatedTitle: Story = {
     confirmDuration: 0.3,
     yOffset: 110,
     enableTitleFade: false,
-    xOffset: 40,
     totalStagger: 0.65,
     x1: 0.06,
     x2: 0.7
