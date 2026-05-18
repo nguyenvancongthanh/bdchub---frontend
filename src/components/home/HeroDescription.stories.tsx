@@ -1,37 +1,40 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import Hero from './Hero';
-import {
-  sharedSyncDecorator,
-  HeroRender,
-  commonArgTypes,
-  commonArgs,
-  StorybookHeroProps
-} from './HeroStoriesHelper';
+import { HeroDescription } from './hero/HeroDescription';
 
-const meta: Meta<StorybookHeroProps> = {
+const meta: Meta<typeof HeroDescription> = {
   title: 'Landing/Hero/Description',
-  component: Hero as any,
+  component: HeroDescription,
   parameters: {
-    layout: 'fullscreen',
+    layout: 'centered',
   },
-  decorators: [sharedSyncDecorator],
-  argTypes: commonArgTypes,
+  argTypes: {
+    descriptionDuration: {
+      control: { type: 'range', min: 0.1, max: 2.0, step: 0.05 },
+      description: 'Thời lượng chạy hoạt ảnh mô tả (giây)',
+      table: {
+        category: '📝 Description Motion',
+      }
+    },
+    descriptionYOffset: {
+      control: { type: 'range', min: 0, max: 100, step: 1 },
+      description: 'Khoảng cách trượt thẳng đứng từ dưới lên của mô tả (px)',
+      table: {
+        category: '📝 Description Motion',
+      }
+    },
+  },
   args: {
-    ...commonArgs,
-    focusSection: 'description',
+    descriptionDuration: 0.6,
+    descriptionYOffset: 15,
   },
 };
 
 export default meta;
-type Story = StoryObj<StorybookHeroProps>;
+type Story = StoryObj<typeof HeroDescription>;
 
-// Story: Isolated Description Animation
 export const IsolatedDescription: Story = {
-  render: HeroRender,
   name: 'Isolated Description Animation',
   args: {
-    ...commonArgs,
-    focusSection: 'description',
     descriptionDuration: 0.6,
     descriptionYOffset: 15,
   },

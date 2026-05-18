@@ -129,14 +129,15 @@ export default function Hero({
           />
         )}
 
-        {/* Scroll indicator */}
-        {(focusSection === "all" || focusSection === "actions") && (
-          <ScrollIndicator
-            actionsDuration={actionsDuration}
-            actionsYOffset={actionsYOffset}
-          />
-        )}
       </div>
+
+      {/* Scroll indicator - Positioned absolutely at the bottom of the section */}
+      {(focusSection === "all" || focusSection === "actions") && (
+        <ScrollIndicator
+          actionsDuration={actionsDuration}
+          actionsYOffset={actionsYOffset}
+        />
+      )}
     </motion.section>
   );
 }

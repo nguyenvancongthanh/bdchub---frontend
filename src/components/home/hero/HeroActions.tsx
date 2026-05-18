@@ -57,6 +57,8 @@ export function HeroActions({
   return (
     <motion.div 
       variants={actionsVariants}
+      initial="hidden"
+      animate="visible"
       className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center pt-2 w-full sm:w-auto transition-all duration-200"
     >
       {isAuthenticated ? (

@@ -175,7 +175,7 @@ export function HeroTitle({
                   custom={{ index, total: printableCharsCount }}
                   variants={letterVariants}
                   animate={isScrubMode ? false : undefined}
-                  className="inline-block will-change-transform [backface-visibility:hidden]"
+                  className={`inline-block will-change-transform [backface-visibility:hidden] ${index === 0 ? "ml-[-0.05em]" : ""}`}
                   {...letterStyleProps}
                 >
                   {char}

@@ -149,6 +149,19 @@ To produce an eye-catching, high-fidelity visual experience representing BDC's t
 3. **GPU Compositing Optimization**:
    * Added `will-change-transform` to both orbits to force GPU composition layer rendering. This keeps CPU usage at `0%` and ensures buttery smooth `60fps/120fps` visual rotations.
 
+### 4.4 Optical Character Alignment (Visual Left Flush)
+
+To achieve absolute typographic perfection and ensure the split-character title aligns flawlessly with the left edge of the content container (and the description text below it), we apply **Optical Character Alignment** to the very first letter of the title:
+
+* **The Problem**: Font glyphs naturally contain built-in left and right blank spacing (known as **Side Bearings**) in their glyph definitions. When splitting the text into isolated inline-block DOM elements (`motion.span`), the left side bearing of the very first letter ("B") introduces a small blank visual gap, causing the entire title to appear slightly indented or shifted to the right.
+* **The Typographic Solution**: We conditionally apply a custom negative left margin (`ml-[-0.05em]`) **exclusively to the first letter** of the title (`index === 0`):
+
+  ```tsx
+  className={`inline-block will-change-transform [backface-visibility:hidden] ${index === 0 ? "ml-[-0.05em]" : ""}`}
+  ```
+
+* **Why it works**: By utilizing `em` units, the negative margin scales proportionally with any font size adjustments across different screen breakpoints, pulling the flat left vertical stroke of the letter "B" perfectly flush with the left boundary of the grid column.
+
 ---
 
 ## 5. Responsive Adaptation Schema

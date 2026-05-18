@@ -51,7 +51,9 @@ export function ScrollIndicator({
   return (
     <motion.div 
       variants={actionsVariants}
-      className="pt-12 flex justify-center transition-all duration-200 w-full col-span-12"
+      initial="hidden"
+      animate="visible"
+      className="hidden lg:flex absolute bottom-6 left-0 right-0 mx-auto justify-center transition-all duration-200 w-fit z-20"
     >
       <a 
         href="#about" 

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, Variants } from "framer-motion";
-import { statsData } from "./HeroVisualCore";
+import { statsData } from "./HeroStatsCards";
 
 export interface HeroStatsMobileProps {
   statsDuration: number;
@@ -23,7 +23,7 @@ export function HeroStatsMobile({
     visible: {
       opacity: 1,
       y: 0,
-      filter: "none",
+      filter: "blur(0px)",
       transition: {
         duration: statsDuration,
         ease: [0.16, 1, 0.3, 1], // Premium out-expo easing
@@ -35,6 +35,8 @@ export function HeroStatsMobile({
   return (
     <motion.div 
       variants={statsVariants}
+      initial="hidden"
+      animate="visible"
       className="w-full lg:hidden grid grid-cols-2 gap-3 pt-8 border-t border-slate-200/50 dark:border-blue-500/5 mt-8"
     >
       {statsData.map((stat, i) => (
