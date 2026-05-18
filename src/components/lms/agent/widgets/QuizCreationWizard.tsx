@@ -180,23 +180,23 @@ export function QuizCreationWizard({ props }: QuizCreationWizardProps) {
       const quizId = quizResp.data?.id;
       if (!quizId) throw new Error("Không thể khởi tạo Quiz Activity.");
 
-      // 4. Create Questions
+      // 4. Create Questions (Batch)
       setSaveStep(`Đang tạo ${approvedDrafts.length} câu hỏi...`);
-      let questionOrder = 1;
-      for (const draft of approvedDrafts) {
-        await quizService.createQuestion(quizId, {
-          question_text: draft.question_text,
-          question_type: draft.question_type || "SINGLE_CHOICE",
-          explanation: draft.explanation || "",
-          points: 10,
-          order_index: questionOrder++,
-          answer_options: getAnswerOptions(draft.answer_options).map((opt: any, index: number) => ({
-            option_text: opt.text || opt.option_text || "",
-            is_correct: !!opt.is_correct,
-            order_index: index + 1
-          }))
-        });
-      }
+      
+      const questionsData = approvedDrafts.map((draft, index) => ({
+        question_text: draft.question_text,
+        question_type: draft.question_type || "SINGLE_CHOICE",
+        explanation: draft.explanation || "",
+        points: 10,
+        order_index: index + 1,
+        answer_options: getAnswerOptions(draft.answer_options).map((opt: any, optIndex: number) => ({
+          option_text: opt.text || opt.option_text || "",
+          is_correct: !!opt.is_correct,
+          order_index: optIndex + 1
+        }))
+      }));
+
+      await quizService.createQuestionsBatch(quizId, questionsData);
 
       setSaveStep("Hoàn tất!");
       setSuccess(true);

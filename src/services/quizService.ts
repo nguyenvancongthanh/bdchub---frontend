@@ -59,6 +59,17 @@ class QuizService {
     return response.data;
   }
 
+  async createQuestionsBatch(quizId: number, questionsData: any[]) {
+    const payload = {
+      questions: questionsData.map(q => ({ ...q, quiz_id: quizId }))
+    };
+    const response = await lmsApiClient.post(
+      `/quizzes/${quizId}/questions/batch`,
+      payload
+    );
+    return response.data;
+  }
+
   async updateQuestion(questionId: number, updates: any) {
     const response = await lmsApiClient.put(`/questions/${questionId}`, updates);
     return response.data;
