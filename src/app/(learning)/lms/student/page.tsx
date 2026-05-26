@@ -165,13 +165,9 @@ export default function StudentDashboard() {
         setAverageProgress(0);
       }
 
-      // Fetch spaced repetition stats across all courses
-      const statsPromises = enrollList.map((e: Enrollment) =>
-        aiService.getReviewStats(e.course_id).catch(() => null)
-      );
-      const statsList = await Promise.all(statsPromises);
-      const sumDue = statsList.reduce((acc, curr) => acc + (curr?.due_today ?? 0), 0);
-      setTotalDueToday(sumDue);
+      // Fetch spaced repetition stats across all courses using aggregate endpoint
+      const dueCount = await aiService.getTotalDueReviews().catch(() => 0);
+      setTotalDueToday(dueCount);
 
     } catch (e) {
       console.error(e);
@@ -180,6 +176,7 @@ export default function StudentDashboard() {
       setLoadingEnrolled(false);
     }
   }, []);
+
 
   useEffect(() => {
     loadAllData();

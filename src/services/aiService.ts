@@ -294,6 +294,13 @@ class AIService {
     return res.data?.data ?? res.data ?? { due_today: 0, upcoming: 0, total_tracked: 0 };
   }
 
+  async getTotalDueReviews(): Promise<number> {
+    const res = await lmsApiClient.get("/ai/reviews/total-due-today");
+    const data = res.data?.data ?? res.data;
+    return data?.due_today ?? 0;
+  }
+
+
   async getNodeChunks(courseId: number, nodeId: number): Promise<ChunkItem[]> {
       const res = await lmsApiClient.get(`/courses/${courseId}/ai/nodes/${nodeId}/chunks`)
       return res.data?.data ?? []

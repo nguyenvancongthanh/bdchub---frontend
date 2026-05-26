@@ -79,96 +79,17 @@ export default function TeacherDashboard() {
     setLoading(true);
     setError("");
     try {
-      // 1. Fetch teacher courses
-      const coursesRes = await lmsService.listMyCourses({ page_size: 100 });
-      const courses: Course[] = coursesRes?.data ?? [];
+      const summaryRes = await analyticsService.getTeacherDashboardSummary();
+      const summary = summaryRes?.data;
 
-      const published = courses.filter(c => c.status === "PUBLISHED");
-      const draft = courses.filter(c => c.status === "DRAFT");
-
-      setTotalCoursesCount(courses.length);
-      setPublishedCoursesCount(published.length);
-      setDraftCoursesCount(draft.length);
-
-      // 2. Fetch learners and student progress overview for each published course in parallel
-      const publishedIds = published.map(c => c.id);
-
-      const learnersPromises = publishedIds.map(id =>
-        lmsService.getCourseLearners(id, "ACCEPTED").catch(() => [])
-      );
-
-      const progressPromises = publishedIds.map(id =>
-        analyticsService.getCourseStudentProgressOverview(id).catch(() => ({ data: [] }))
-      );
-
-      const [learnersArrays, progressArrays] = await Promise.all([
-        Promise.all(learnersPromises),
-        Promise.all(progressPromises)
-      ]);
-
-      // 3. Aggregate unique students list & timeline data
-      const uniqueStudentsMap = new Map<number, boolean>();
-      const timelineMap: Record<string, number> = {};
-
-      learnersArrays.forEach((learners, index) => {
-        (learners ?? []).forEach(l => {
-          uniqueStudentsMap.set(l.student_id, true);
-
-          if (l.enrolled_at) {
-            // Format date to local standard DD/MM
-            const dateStr = new Date(l.enrolled_at).toLocaleDateString("vi-VN", {
-              month: "2-digit",
-              day: "2-digit"
-            });
-            timelineMap[dateStr] = (timelineMap[dateStr] || 0) + 1;
-          }
-        });
-      });
-
-      setTotalUniqueStudents(uniqueStudentsMap.size);
-
-      // Format timeline data chronologically
-      const timelineData = Object.entries(timelineMap)
-        .map(([date, count]) => ({ date, "Học viên mới": count }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-10); // show last 10 days with activity
-      setRegistrationTimeline(timelineData);
-
-      // 4. Calculate stats per course
-      const stats = published.map((course, index) => {
-        const progressList = progressArrays[index]?.data || [];
-        const studentCount = progressList.length;
-
-        let totalProgress = 0;
-        let completedProgressCount = 0;
-        let totalQuizScore = 0;
-        let quizScoreCount = 0;
-
-        progressList.forEach(p => {
-          totalProgress += p.progress_percent || 0;
-          completedProgressCount++;
-
-          if (p.quiz_avg_score !== null && p.quiz_avg_score !== undefined) {
-            totalQuizScore += p.quiz_avg_score;
-            quizScoreCount++;
-          }
-        });
-
-        const avgProgress = completedProgressCount > 0 ? totalProgress / completedProgressCount : 0;
-        const avgQuiz = quizScoreCount > 0 ? totalQuizScore / quizScoreCount : null;
-
-        return {
-          id: course.id,
-          title: course.title,
-          thumbnail_url: course.thumbnail_url,
-          studentCount,
-          avgProgress,
-          avgQuiz,
-        };
-      });
-
-      setCourseStats(stats);
-
+      if (summary) {
+        setTotalCoursesCount(summary.totalCoursesCount);
+        setPublishedCoursesCount(summary.publishedCoursesCount);
+        setDraftCoursesCount(summary.draftCoursesCount);
+        setTotalUniqueStudents(summary.totalUniqueStudents);
+        setRegistrationTimeline(summary.registrationTimeline || []);
+        setCourseStats(summary.courseStats || []);
+      }
     } catch (e) {
       console.error(e);
       setError("Không thể tải thông tin thống kê. Vui lòng thử lại.");
@@ -176,6 +97,7 @@ export default function TeacherDashboard() {
       setLoading(false);
     }
   }, []);
+
 
   useEffect(() => {
     const role = sessionStorage.getItem("lms_selected_role");

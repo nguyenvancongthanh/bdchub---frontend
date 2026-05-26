@@ -91,6 +91,30 @@ export interface WeaknessOverviewResponse {
   weak_nodes: WeakNode[];
 }
 
+export interface TeacherCourseStats {
+  id: number;
+  title: string;
+  thumbnail_url: string;
+  studentCount: number;
+  avgProgress: number;
+  avgQuiz: number | null;
+}
+
+export interface RegistrationTimeline {
+  date: string;
+  "Học viên mới": number;
+}
+
+export interface TeacherDashboardSummaryResponse {
+  totalCoursesCount: number;
+  publishedCoursesCount: number;
+  draftCoursesCount: number;
+  totalUniqueStudents: number;
+  registrationTimeline: RegistrationTimeline[];
+  courseStats: TeacherCourseStats[];
+}
+
+
 export interface FlashcardStatsResponse {
   today_due_count: number;
   upcoming_count: number;
@@ -288,7 +312,14 @@ class AnalyticsService {
     });
     return response.data;
   }
+
+  /** Get teacher dashboard summary (aggregated courses, unique students count, timeline, and course stats) */
+  async getTeacherDashboardSummary(): Promise<{ data: TeacherDashboardSummaryResponse }> {
+    const response = await lmsApiClient.get("/analytics/teacher-dashboard");
+    return response.data;
+  }
 }
+
 
 export const analyticsService = new AnalyticsService();
 export default analyticsService;
