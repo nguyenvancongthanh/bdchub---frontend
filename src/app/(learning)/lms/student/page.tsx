@@ -30,17 +30,15 @@ import {
 
 function LearningStats({
   enrollments,
-  totalDueToday,
   averageProgress
 }: {
   enrollments: Enrollment[];
-  totalDueToday: number;
   averageProgress: number;
 }) {
   const accepted = enrollments.filter(e => e.status === "ACCEPTED");
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <StatCard
         label="Đã đăng ký"
         value={accepted.length}
@@ -54,13 +52,6 @@ function LearningStats({
         sub="tiến độ toàn khóa"
         icon={<CheckCircle2 className="w-5 h-5" />}
         accent="green"
-      />
-      <StatCard
-        label="Cần ôn tập hôm nay"
-        value={totalDueToday}
-        sub="thẻ ghi nhớ"
-        icon={<Brain className="w-5 h-5" />}
-        accent={totalDueToday > 0 ? "orange" : "blue"}
       />
       <StatCard
         label="Đang tiến hành"
@@ -121,7 +112,6 @@ export default function StudentDashboard() {
   const [error, setError] = useState("");
 
   // Aggregate stats
-  const [totalDueToday, setTotalDueToday] = useState(0);
   const [averageProgress, setAverageProgress] = useState(0);
 
   // Selected Course details for Analytics
@@ -165,9 +155,7 @@ export default function StudentDashboard() {
         setAverageProgress(0);
       }
 
-      // Fetch spaced repetition stats across all courses using aggregate endpoint
-      const dueCount = await aiService.getTotalDueReviews().catch(() => 0);
-      setTotalDueToday(dueCount);
+
 
     } catch (e) {
       console.error(e);
@@ -297,45 +285,20 @@ export default function StudentDashboard() {
       {/* ── Error alert ── */}
       {error && <Alert type="error">{error}</Alert>}
 
-      {/* ── Spaced Repetition Due Reminder Banner ── */}
-      {totalDueToday > 0 && (
-        <div className="bg-gradient-to-r from-orange-500/15 to-amber-500/10 dark:from-orange-500/10 dark:to-transparent border border-orange-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-md">
-              <Brain className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-slate-50 text-base">Cần ôn tập kiến thức hôm nay</h4>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
-                Bạn có <span className="font-bold text-orange-600 dark:text-orange-400">{totalDueToday}</span> thẻ ôn tập cần được củng cố theo chu kỳ lặp lại ngắt quãng.
-              </p>
-            </div>
-          </div>
-          <PrimaryBtn
-            size="sm"
-            icon={<ChevronRight className="w-4 h-4" />}
-            onClick={() => router.push(selectedCourseId ? `/lms/student/courses/${selectedCourseId}` : "/lms/student")}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
-          >
-            Ôn tập ngay
-          </PrimaryBtn>
-        </div>
-      )}
-
       {/* ── Stats row ── */}
       {loadingEnrolled ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[0, 1, 2, 3].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[0, 1, 2].map(i => (
             <div key={i} className="h-24 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse" />
           ))}
         </div>
       ) : (
         <LearningStats
           enrollments={acceptedEnrollments}
-          totalDueToday={totalDueToday}
           averageProgress={averageProgress}
         />
       )}
+
 
       {/* ── Dashboard Layout ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
