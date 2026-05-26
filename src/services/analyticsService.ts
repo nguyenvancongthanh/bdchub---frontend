@@ -97,6 +97,53 @@ export interface FlashcardStatsResponse {
   learning_count: number;
 }
 
+export interface LessonContentTypeCount {
+  content_type: string;
+  completed: number;
+  total: number;
+}
+
+export interface LessonProgressSummary {
+  total_completed: number;
+  total_content: number;
+  percent: number;
+  by_type: LessonContentTypeCount[];
+}
+
+export interface FlashcardDetailedStats {
+  total_active: number;
+  total_mastered: number;
+  total_learning: number;
+  total_new: number;
+  due_today: number;
+  upcoming_7d: number;
+  avg_easiness: number;
+  reviewed_today: number;
+  total_reviews: number;
+}
+
+export interface SpacedRepQuizDetailedStats {
+  total_tracked: number;
+  due_today: number;
+  mastered: number;
+  avg_quality: number;
+}
+
+export interface MicroInteractionSummary {
+  total_interactions: number;
+  total_correct: number;
+  total_wrong: number;
+}
+
+export interface StudentAnalyticsSummaryResponse {
+  lesson_progress: LessonProgressSummary;
+  quiz_scores: StudentQuizScore[];
+  flashcards: FlashcardDetailedStats;
+  spaced_rep_quizzes: SpacedRepQuizDetailedStats;
+  micro_interactions: MicroInteractionSummary;
+  heatmap: any[];
+}
+
 // ─── Quick Action Panel — Micro-Interaction tracking ──────────────────────
 
 export type MicroInteractionAction =
@@ -196,6 +243,12 @@ class AnalyticsService {
   /** Get flashcard spaced repetition stats */
   async getFlashcardStats(courseId: number): Promise<{ data: FlashcardStatsResponse }> {
     const response = await lmsApiClient.get(`/courses/${courseId}/analytics/flashcard-stats`);
+    return response.data;
+  }
+
+  /** Get student's aggregated analytics summary for a course */
+  async getStudentAnalyticsSummary(courseId: number): Promise<{ data: StudentAnalyticsSummaryResponse }> {
+    const response = await lmsApiClient.get(`/courses/${courseId}/analytics/student-summary`);
     return response.data;
   }
 

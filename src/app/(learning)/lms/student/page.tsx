@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { lmsService } from "@/services/lmsService";
 import { aiService } from "@/services/aiService";
 import { analyticsService } from "@/services/analyticsService";
+import { progressService, type ProgressDetailItem } from "@/services/progressService";
 import {
   BookOpen, Clock, CheckCircle2,
   ChevronRight, Search, RefreshCw,
-  Award, Brain, Target, AlertTriangle, TrendingUp, HelpCircle
+  Award, Brain, Target, AlertTriangle, TrendingUp, HelpCircle,
+  ListTodo, CheckSquare, Layers
 } from "lucide-react";
 import {
   StatCard, Card,
@@ -21,7 +23,7 @@ import {
   ResponsiveContainer, RadarChart, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis, Radar,
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, CartesianGrid
 } from "recharts";
 
 // ─── Stats row ────────────────────────────────────────────────────────────────
@@ -128,6 +130,10 @@ export default function StudentDashboard() {
   const [heatmapData, setHeatmapData] = useState<any[]>([]);
   const [flashcardStats, setFlashcardStats] = useState<any>(null);
   const [quizScores, setQuizScores] = useState<any[]>([]);
+  const [lessonProgress, setLessonProgress] = useState<any>(null);
+  const [microInteractions, setMicroInteractions] = useState<any>(null);
+  const [spacedRepQuizzes, setSpacedRepQuizzes] = useState<any>(null);
+  const [analyticsTab, setAnalyticsTab] = useState<"lessons" | "mastery" | "flashcards">("lessons");
 
   useEffect(() => {
     setMounted(true);
@@ -144,9 +150,12 @@ export default function StudentDashboard() {
       setAcceptedEnrollments(enrollList);
 
       // Select first course by default for analytics
-      if (enrollList.length > 0 && !selectedCourseId) {
-        setSelectedCourseId(enrollList[0].course_id);
-      }
+      setSelectedCourseId(prev => {
+        if (enrollList.length > 0 && !prev) {
+          return enrollList[0].course_id;
+        }
+        return prev;
+      });
 
       // Calculate average progress
       if (enrollList.length > 0) {
@@ -170,7 +179,7 @@ export default function StudentDashboard() {
     } finally {
       setLoadingEnrolled(false);
     }
-  }, [selectedCourseId]);
+  }, []);
 
   useEffect(() => {
     loadAllData();
@@ -181,25 +190,32 @@ export default function StudentDashboard() {
   const loadCourseAnalytics = useCallback(async (courseId: number) => {
     setLoadingAnalytics(true);
     try {
-      const [heatmap, fcStats, quizzes] = await Promise.all([
-        aiService.getStudentHeatmap(courseId).catch(() => []),
-        analyticsService.getFlashcardStats(courseId).catch(() => null),
-        analyticsService.getMyQuizScores(courseId).catch(() => ({ data: [] }))
-      ]);
+      const result = await analyticsService.getStudentAnalyticsSummary(courseId);
+      const summary = result?.data;
 
-      // Format heatmap for radar chart (max 8 nodes for readable chart)
-      const formattedHeatmap = (heatmap || []).slice(0, 8).map(n => ({
-        subject: n.name_vi || n.node_name,
-        "Độ thông thạo (%)": Math.round(n.avg_mastery * 100),
-      }));
-      setHeatmapData(formattedHeatmap);
+      if (summary) {
+        // Format heatmap for radar chart (max 8 nodes for readable chart)
+        const formattedHeatmap = (summary.heatmap || []).slice(0, 8).map((n: any) => ({
+          subject: n.name_vi || n.node_name,
+          "Độ thông thạo (%)": Math.round((n.avg_mastery || n.mastery_level || 0) * 100),
+        }));
+        setHeatmapData(formattedHeatmap);
 
-      // Spaced repetition stats
-      setFlashcardStats(fcStats?.data ?? null);
+        // Spaced repetition stats
+        setFlashcardStats(summary.flashcards);
 
-      // Quiz best scores
-      setQuizScores(quizzes?.data || []);
+        // Quiz best scores
+        setQuizScores(summary.quiz_scores || []);
 
+        // Lesson progress
+        setLessonProgress(summary.lesson_progress);
+
+        // Micro interactions
+        setMicroInteractions(summary.micro_interactions);
+
+        // Spaced rep quizzes stats
+        setSpacedRepQuizzes(summary.spaced_rep_quizzes);
+      }
     } catch (e) {
       console.error("Error loading course analytics:", e);
     } finally {
@@ -215,15 +231,44 @@ export default function StudentDashboard() {
 
   // ── Render Helpers ──────────────────────────────────────────────────────────
 
-  const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#8b5cf6", "#f59e0b"];
+  const COLORS = ["#10b981", "#3b82f6", "#64748b"];
 
   const getPieData = () => {
     if (!flashcardStats) return [];
     return [
-      { name: "Cần ôn tập", value: flashcardStats.today_due_count || 0 },
-      { name: "Sắp tới", value: flashcardStats.upcoming_count || 0 },
-      { name: "Đang học", value: Math.max(0, (flashcardStats.learning_count || 0) - (flashcardStats.today_due_count || 0) - (flashcardStats.upcoming_count || 0)) },
+      { name: "Đã nhuần nhuyễn", value: flashcardStats.total_mastered || 0 },
+      { name: "Đang học", value: flashcardStats.total_learning || 0 },
+      { name: "Thẻ mới chưa ôn", value: flashcardStats.total_new || 0 },
     ].filter(d => d.value > 0);
+  };
+
+  const getFormatData = () => {
+    if (!lessonProgress || !lessonProgress.by_type) return [];
+    const labelMap: Record<string, string> = {
+      VIDEO: "Video",
+      DOCUMENT: "Tài liệu",
+      TEXT: "Bài đọc",
+      IMAGE: "Hình ảnh",
+      QUIZ: "Trắc nghiệm",
+      FORUM: "Thảo luận",
+      ANNOUNCEMENT: "Thông báo",
+    };
+    return lessonProgress.by_type.map((item: any) => ({
+      name: labelMap[item.content_type] || item.content_type,
+      "Đã học": item.completed,
+      "Chưa học": Math.max(0, item.total - item.completed),
+      "Tổng số": item.total,
+    }));
+  };
+
+  const getSectionStats = () => {
+    if (!lessonProgress || !lessonProgress.by_section) return [];
+    return lessonProgress.by_section.map((item: any) => ({
+      section: item.section_title,
+      total: item.total,
+      completed: item.completed,
+      percent: item.percent,
+    }));
   };
 
   const currentCourse = acceptedEnrollments.find(e => e.course_id === selectedCourseId);
@@ -370,7 +415,7 @@ export default function StudentDashboard() {
                 </div>
 
                 <select
-                  value={selectedCourseId}
+                  value={selectedCourseId ?? ""}
                   onChange={e => setSelectedCourseId(Number(e.target.value))}
                   className="py-2 px-3 border border-slate-300 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
@@ -385,145 +430,338 @@ export default function StudentDashboard() {
               {loadingAnalytics ? (
                 <PageLoader message="Đang tải dữ liệu phân tích khóa học..." />
               ) : (
-                <div className="space-y-8">
-                  {/* Visual Analytics row */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  {/* Tab selector buttons */}
+                  <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 pb-3 mb-6 overflow-x-auto">
+                    <button
+                      onClick={() => setAnalyticsTab("lessons")}
+                      className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${
+                        analyticsTab === "lessons"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <ListTodo className="w-4 h-4" />
+                      Tiến độ bài học
+                    </button>
+                    <button
+                      onClick={() => setAnalyticsTab("mastery")}
+                      className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${
+                        analyticsTab === "mastery"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <Target className="w-4 h-4" />
+                      Năng lực & Quiz
+                    </button>
+                    <button
+                      onClick={() => setAnalyticsTab("flashcards")}
+                      className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${
+                        analyticsTab === "flashcards"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <Brain className="w-4 h-4" />
+                      Ghi nhớ (Flashcard)
+                    </button>
+                  </div>
 
-                    {/* Heatmap/Mastery Radar chart */}
-                    <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col h-[320px]">
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
-                        <Target className="w-4 h-4 text-blue-500" />
-                        Độ thông thạo theo chủ đề
-                      </h4>
-                      {heatmapData.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                          <HelpCircle className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-2" />
-                          <p className="text-xs text-slate-500">Chưa có đủ tương tác làm bài trắc nghiệm để vẽ biểu đồ thông thạo.</p>
-                        </div>
-                      ) : (
-                        <div className="flex-1">
-                          {mounted && (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={heatmapData}>
-                                <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#64748b" }} />
-                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} />
-                                <Radar
-                                  name="Thông thạo"
-                                  dataKey="Độ thông thạo (%)"
-                                  stroke="#3b82f6"
-                                  fill="#3b82f6"
-                                  fillOpacity={0.3}
-                                />
-                                <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "8px" }} />
-                              </RadarChart>
-                            </ResponsiveContainer>
+                  {/* Render Tabs content */}
+                  {analyticsTab === "lessons" && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Format completion chart */}
+                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col h-[320px]">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                            <Layers className="w-4 h-4 text-blue-500" />
+                            Bài học đã hoàn thành theo loại học liệu
+                          </h4>
+                          {!lessonProgress || lessonProgress.total_content === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                              <BookOpen className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-2" />
+                              <p className="text-xs text-slate-500">Chưa có bài học nào trong khóa học này.</p>
+                            </div>
+                          ) : (
+                            <div className="flex-1">
+                              {mounted && (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={getFormatData()} margin={{ left: -15, right: 10, top: 10, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} />
+                                    <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#64748b" }} />
+                                    <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "8px" }} />
+                                    <Legend wrapperStyle={{ fontSize: "11px" }} />
+                                    <Bar dataKey="Đã học" fill="#10b981" stackId="a" radius={[0, 0, 0, 0]} />
+                                    <Bar dataKey="Chưa học" fill="#cbd5e1" stackId="a" radius={[4, 4, 0, 0]} className="dark:fill-slate-700" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Spaced repetition status chart */}
-                    <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col h-[320px]">
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                        {/* Section completion checklist */}
+                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col h-[320px]">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                            <ListTodo className="w-4 h-4 text-emerald-500" />
+                            Tiến độ học tập theo chương học
+                          </h4>
+                          {!lessonProgress || !lessonProgress.by_section || lessonProgress.by_section.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                              <ListTodo className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-2" />
+                              <p className="text-xs text-slate-500">Chưa có chương học nào được cấu hình.</p>
+                            </div>
+                          ) : (
+                            <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+                              {getSectionStats().map((s, idx) => (
+                                <div key={idx} className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50 shadow-xs">
+                                  <div className="flex justify-between items-start gap-3 mb-1.5">
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[70%]">
+                                      {s.section}
+                                    </span>
+                                    <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-bold">
+                                      {s.completed}/{s.total} bài ({s.percent}%)
+                                    </span>
+                                  </div>
+                                  <ProgressBar
+                                    value={s.completed}
+                                    max={s.total}
+                                    color={s.percent === 100 ? "green" : "blue"}
+                                    showPercent={false}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {analyticsTab === "mastery" && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Radar Chart */}
+                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col h-[320px]">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                            <Target className="w-4 h-4 text-blue-500" />
+                            Độ thông thạo theo chủ đề kiến thức (Heatmap)
+                          </h4>
+                          {heatmapData.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                              <HelpCircle className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-2" />
+                              <p className="text-xs text-slate-500">Chưa có đủ dữ liệu tương tác để phân tích độ thông thạo chủ đề.</p>
+                            </div>
+                          ) : (
+                            <div className="flex-1">
+                              {mounted && (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={heatmapData}>
+                                    <PolarGrid stroke="#e2e8f0" />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#64748b" }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} />
+                                    <Radar
+                                      name="Thông thạo"
+                                      dataKey="Độ thông thạo (%)"
+                                      stroke="#3b82f6"
+                                      fill="#3b82f6"
+                                      fillOpacity={0.3}
+                                    />
+                                    <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "8px" }} />
+                                  </RadarChart>
+                                </ResponsiveContainer>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Quiz results */}
+                        <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col h-[320px]">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                            <Award className="w-4 h-4 text-amber-500" />
+                            Điểm trắc nghiệm (Quizzes) cao nhất đạt được
+                          </h4>
+                          {quizScores.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                              <Award className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-2" />
+                              <p className="text-xs text-slate-500">Chưa làm bài trắc nghiệm nào trong khóa học này.</p>
+                            </div>
+                          ) : (
+                            <div className="flex-1 flex flex-col justify-between">
+                              <div className="flex-1 max-h-[160px] overflow-auto pr-1">
+                                {mounted && (
+                                  <ResponsiveContainer width="100%" height={Math.max(120, quizScores.length * 40)}>
+                                    <BarChart
+                                      layout="vertical"
+                                      data={quizScores.map(q => ({
+                                        name: q.quiz_title,
+                                        "Điểm (%)": q.best_percentage || 0
+                                      }))}
+                                      margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
+                                    >
+                                      <XAxis type="number" domain={[0, 100]} hide />
+                                      <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: "#64748b" }} width={110} />
+                                      <Tooltip formatter={(value) => `${value}%`} />
+                                      <Bar dataKey="Điểm (%)" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={15} />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                                {quizScores.slice(0, 4).map(q => (
+                                  <div key={q.quiz_id} className="bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between text-xs">
+                                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[80px]">{q.quiz_title}</span>
+                                    <Badge variant={q.is_passed ? "green" : q.best_percentage ? "red" : "gray"}>
+                                      {q.best_percentage !== null ? `${Math.round(q.best_percentage)}%` : "Chưa làm"}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quick check and Spaced Rep quiz results */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {microInteractions && microInteractions.total_interactions > 0 && (
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                              <CheckSquare className="w-4 h-4 text-emerald-500" />
+                              Đánh giá tương tác nhanh (Concept check)
+                            </h4>
+                            <div className="grid grid-cols-3 gap-3 text-center text-xs flex-1">
+                              <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500">Số câu trả lời</p>
+                                <p className="text-base font-extrabold text-slate-800 dark:text-slate-100 mt-1">{microInteractions.total_interactions}</p>
+                              </div>
+                              <div className="bg-white dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500">Số câu trả lời đúng</p>
+                                <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{microInteractions.total_correct}</p>
+                              </div>
+                              <div className="bg-white dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500">Độ chính xác</p>
+                                <p className="text-base font-extrabold text-blue-600 dark:text-blue-400 mt-1">
+                                  {Math.round((microInteractions.total_correct / microInteractions.total_interactions) * 100)}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {spacedRepQuizzes && spacedRepQuizzes.total_tracked > 0 && (
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-4 flex flex-col">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3 flex items-center gap-1.5">
+                              <TrendingUp className="w-4 h-4 text-violet-500" />
+                              Luyện tập Lặp lại ngắt quãng (Quiz SM-2)
+                            </h4>
+                            <div className="grid grid-cols-2 gap-2 text-xs flex-1">
+                              <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs flex justify-between items-center">
+                                <span className="text-slate-500">Tổng số câu theo dõi:</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200">{spacedRepQuizzes.total_tracked}</span>
+                              </div>
+                              <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs flex justify-between items-center">
+                                <span className="text-slate-500">Cần làm hôm nay:</span>
+                                <span className={`font-bold ${spacedRepQuizzes.due_today > 0 ? "text-orange-600" : "text-emerald-600"}`}>{spacedRepQuizzes.due_today}</span>
+                              </div>
+                              <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs flex justify-between items-center">
+                                <span className="text-slate-500">Đã nhớ tốt (Mastered):</span>
+                                <span className="font-bold text-emerald-600">{spacedRepQuizzes.mastered}</span>
+                              </div>
+                              <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs flex justify-between items-center">
+                                <span className="text-slate-500">Chất lượng TB:</span>
+                                <span className="font-bold text-violet-600">{spacedRepQuizzes.avg_quality.toFixed(1)}/5.0</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {analyticsTab === "flashcards" && (
+                    <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-6">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-4 flex items-center gap-1.5">
                         <Brain className="w-4 h-4 text-violet-500" />
-                        Trạng thái Spaced Repetition (Flashcard)
+                        Theo dõi ghi nhớ qua Spaced Repetition (Hệ thống thẻ Flashcard)
                       </h4>
-                      {!flashcardStats || (flashcardStats.learning_count === 0 && flashcardStats.today_due_count === 0) ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                          <Brain className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-2" />
-                          <p className="text-xs text-slate-500">Chưa có flashcard nào được tạo. Hãy vào bài học và tạo flashcard để ghi nhớ.</p>
+                      {!flashcardStats || flashcardStats.total_active === 0 ? (
+                        <div className="text-center py-10">
+                          <Brain className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
+                          <p className="text-sm text-slate-500">Chưa có flashcard nào được tạo. Hãy mở bài học và tạo flashcard để bắt đầu ôn tập thông minh.</p>
                         </div>
                       ) : (
-                        <div className="flex-1 flex flex-col sm:flex-row items-center justify-around gap-4">
-                          <div className="w-[160px] h-[160px] flex-shrink-0">
+                        <div className="flex flex-col md:flex-row items-center justify-around gap-6">
+                          <div className="w-[180px] h-[180px] flex-shrink-0 relative flex items-center justify-center">
                             {mounted && (
                               <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                   <Pie
                                     data={getPieData()}
-                                    innerRadius={50}
-                                    outerRadius={70}
-                                    paddingAngle={3}
+                                    innerRadius={55}
+                                    outerRadius={75}
+                                    paddingAngle={4}
                                     dataKey="value"
                                   >
-                                    {getPieData().map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
+                                    {getPieData().map((entry, index) => {
+                                      const colorMap: Record<string, string> = {
+                                        "Đã nhuần nhuyễn": "#10b981",
+                                        "Đang học": "#3b82f6",
+                                        "Thẻ mới chưa ôn": "#64748b",
+                                      };
+                                      return <Cell key={`cell-${index}`} fill={colorMap[entry.name] || "#3b82f6"} />;
+                                    })}
                                   </Pie>
                                   <Tooltip formatter={(value) => `${value} thẻ`} />
                                 </PieChart>
                               </ResponsiveContainer>
                             )}
+                            <div className="absolute flex flex-col items-center justify-center">
+                              <span className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">{flashcardStats.total_active}</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-semibold">Tổng thẻ</span>
+                            </div>
                           </div>
-                          <div className="space-y-2 text-xs">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-blue-500" />
-                              <span className="text-slate-500">Cần ôn tập:</span>
-                              <span className="font-bold text-slate-800 dark:text-slate-200">{flashcardStats.today_due_count || 0} thẻ</span>
+
+                          <div className="space-y-4 flex-1 max-w-sm">
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500 dark:text-slate-400">Cần ôn hôm nay</p>
+                                <p className={`text-lg font-extrabold mt-1 ${flashcardStats.due_today > 0 ? "text-orange-600" : "text-emerald-600"}`}>
+                                  {flashcardStats.due_today} thẻ
+                                </p>
+                              </div>
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500 dark:text-slate-400">Đã ôn hôm nay</p>
+                                <p className="text-lg font-extrabold text-blue-600 dark:text-blue-400 mt-1">
+                                  {flashcardStats.reviewed_today} thẻ
+                                </p>
+                              </div>
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500 dark:text-slate-400">Độ dễ trung bình (EF)</p>
+                                <p className="text-lg font-extrabold text-violet-600 dark:text-violet-400 mt-1">
+                                  {flashcardStats.avg_easiness.toFixed(2)}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-xs">
+                                <p className="text-slate-500 dark:text-slate-400">Tổng số lượt ôn</p>
+                                <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 mt-1">
+                                  {flashcardStats.total_reviews} lượt
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-red-500" />
-                              <span className="text-slate-500">Đã lên lịch (Upcoming):</span>
-                              <span className="font-bold text-slate-800 dark:text-slate-200">{flashcardStats.upcoming_count || 0} thẻ</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                              <span className="text-slate-500">Tổng đang theo dõi:</span>
-                              <span className="font-bold text-slate-800 dark:text-slate-200">{flashcardStats.learning_count || 0} thẻ</span>
+
+                            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between text-xs text-slate-500">
+                              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />Nhuần nhuyễn: {flashcardStats.total_mastered}</span>
+                              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />Đang học: {flashcardStats.total_learning}</span>
+                              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#64748b]" />Mới: {flashcardStats.total_new}</span>
                             </div>
                           </div>
                         </div>
                       )}
                     </div>
-
-                  </div>
-
-                  {/* Quiz results stats */}
-                  <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 p-5">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-4 flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-amber-500" />
-                      Điểm trắc nghiệm (Quizzes) cao nhất đạt được
-                    </h4>
-                    {quizScores.length === 0 ? (
-                      <div className="text-center py-6">
-                        <Award className="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
-                        <p className="text-xs text-slate-500">Chưa làm bài trắc nghiệm nào trong khóa học này.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="max-h-[220px] overflow-auto pr-1">
-                          {mounted && (
-                            <ResponsiveContainer width="100%" height={Math.max(120, quizScores.length * 40)}>
-                              <BarChart
-                                layout="vertical"
-                                data={quizScores.map(q => ({
-                                  name: q.quiz_title,
-                                  "Điểm (%)": q.best_percentage || 0
-                                }))}
-                                margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
-                              >
-                                <XAxis type="number" domain={[0, 100]} hide />
-                                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: "#64748b" }} width={120} />
-                                <Tooltip formatter={(value) => `${value}%`} />
-                                <Bar dataKey="Điểm (%)" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={15} />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                          {quizScores.map(q => (
-                            <div key={q.quiz_id} className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between text-xs">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{q.quiz_title}</span>
-                              <Badge variant={q.is_passed ? "green" : q.best_percentage ? "red" : "gray"}>
-                                {q.best_percentage !== null ? `${Math.round(q.best_percentage)}%` : "Chưa làm"}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               )}
             </Card>
