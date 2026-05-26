@@ -4,6 +4,10 @@ import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
   // We only care about proxy paths
   if (
@@ -12,11 +16,6 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/uploads/") ||
     pathname.startsWith("/files/")
   ) {
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-
     const requestHeaders = new Headers(req.headers);
 
     if (token?.accessToken) {
@@ -30,6 +29,30 @@ export async function middleware(req: NextRequest) {
     });
   }
 
+  // Check admin-only paths
+  const adminPaths = [
+    "/dashboard",
+    "/users",
+    "/events",
+    "/tasks",
+    "/leaderboard",
+    "/settings",
+  ];
+
+  const isAdminPath = adminPaths.some(
+    (path) => pathname === path || pathname.startsWith(path + "/")
+  );
+
+  if (isAdminPath) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    if (token.role !== "ROLE_ADMIN") {
+      return NextResponse.redirect(new URL("/lms", req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -39,5 +62,11 @@ export const config = {
     "/lmsapiv1/:path*",
     "/uploads/:path*",
     "/files/:path*",
+    "/dashboard/:path*",
+    "/users/:path*",
+    "/events/:path*",
+    "/tasks/:path*",
+    "/leaderboard/:path*",
+    "/settings/:path*",
   ],
 };

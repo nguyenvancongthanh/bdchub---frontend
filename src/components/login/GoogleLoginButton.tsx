@@ -78,7 +78,7 @@ export function GoogleLoginButton({ onError }: GoogleLoginButtonProps) {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/lms");
       router.refresh();
     } catch (err: any) {
       onError(err.message || "Đăng nhập Google thất bại.");

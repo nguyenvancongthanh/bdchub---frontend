@@ -37,7 +37,7 @@ export default function LoginForm() {
         throw new Error("Email hoặc mật khẩu không chính xác.");
       }
 
-      router.push("/dashboard");
+      router.push("/lms");
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Đăng nhập thất bại. Vui lòng thử lại.");

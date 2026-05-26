@@ -3,10 +3,12 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { motion, Variants } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Hero() {
   const router = useRouter();
   const { status } = useSession();
+  const { isAdmin } = useAuth();
   const isAuthenticated = status === "authenticated";
 
   const handleScrollToAbout = (e: React.MouseEvent) => {
@@ -94,8 +96,8 @@ export default function Hero() {
           </a>
           {isAuthenticated && (
             <button
-              onClick={() => router.push("/dashboard")}
-              aria-label="Đi đến Bảng quản trị"
+              onClick={() => router.push(isAdmin ? "/dashboard" : "/lms")}
+              aria-label={isAdmin ? "Đi đến Bảng quản trị" : "Đi đến Học tập"}
               className="px-8 py-3.5 bg-white dark:bg-[#0F1E35] text-slate-800 dark:text-slate-300 font-medium rounded-xl
                          border border-slate-200 dark:border-blue-500/20
                          hover:bg-slate-50 dark:hover:bg-[#162644]
@@ -103,7 +105,7 @@ export default function Hero() {
                          hover:-translate-y-1 hover:shadow-md
                          active:scale-95 transition-all duration-300"
             >
-              Bảng quản trị
+              {isAdmin ? "Bảng quản trị" : "Vào học tập"}
             </button>
           )}
         </motion.div>

@@ -11,7 +11,7 @@ type DashboardLayoutProps = {
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
   const session = await getServerSession(authOptions);
   if (session) {
-    redirect("/dashboard");
+    redirect("/lms");
   }
 
   return (
