@@ -24,6 +24,7 @@ export default function CreateCoursePage() {
     category: "",
     level: "BEGINNER",
     thumbnail_url: "",
+    visibility: "PUBLIC" as "PUBLIC" | "ORG_ONLY",
   });
 
   const validateForm = () => {
@@ -60,6 +61,7 @@ export default function CreateCoursePage() {
         category: formData.category || undefined,
         level: formData.level || undefined,
         thumbnail_url: formData.thumbnail_url ? formData.thumbnail_url : undefined,
+        visibility: formData.visibility,
       });
       
       alert("Tạo khóa học thành công!");
@@ -159,6 +161,42 @@ export default function CreateCoursePage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Visibility */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Khả năng hiển thị
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                id="visibility-public"
+                onClick={() => setFormData({ ...formData, visibility: "PUBLIC" })}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200 active:scale-95 ${
+                  formData.visibility === "PUBLIC"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
+                    : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400"
+                }`}
+              >
+                🌐 Public — Ai cũng có thể đăng ký
+              </button>
+              <button
+                type="button"
+                id="visibility-org-only"
+                onClick={() => setFormData({ ...formData, visibility: "ORG_ONLY" })}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200 active:scale-95 ${
+                  formData.visibility === "ORG_ONLY"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
+                    : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400"
+                }`}
+              >
+                🔒 Chỉ thành viên tổ chức
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mt-1.5">
+              Public: bất kỳ ai đăng ký được. Org Only: chỉ thành viên của tổ chức bạn.
+            </p>
           </div>
 
           <div className="mb-4">

@@ -201,17 +201,22 @@ export default function DiscoverPage() {
                   thumbnailUrl={course.thumbnail_url}
                   enrollmentCount={course.enrollment_count}
                   actions={
-                    enrolled ? (
-                      <Badge variant="green">Đã đăng ký</Badge>
-                    ) : (
-                      <PrimaryBtn
-                        size="sm"
-                        loading={enrolling === course.id}
-                        onClick={e => { e.stopPropagation(); handleEnroll(course.id); }}
-                      >
-                        Đăng ký
-                      </PrimaryBtn>
-                    )
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {course.visibility === "ORG_ONLY" && (
+                        <Badge variant="gray">🔒 Tổ chức</Badge>
+                      )}
+                      {enrolled ? (
+                        <Badge variant="green">Đã đăng ký</Badge>
+                      ) : (
+                        <PrimaryBtn
+                          size="sm"
+                          loading={enrolling === course.id}
+                          onClick={e => { e.stopPropagation(); handleEnroll(course.id); }}
+                        >
+                          Đăng ký
+                        </PrimaryBtn>
+                      )}
+                    </div>
                   }
                 />
               );

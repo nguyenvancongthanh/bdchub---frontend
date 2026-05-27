@@ -16,6 +16,8 @@ export interface Course {
   teacher_name?: string;
   teacher_email?: string;
   enrollment_count?: number;
+  org_id?: number;
+  visibility?: "PUBLIC" | "ORG_ONLY";
 }
 
 export interface Section {
