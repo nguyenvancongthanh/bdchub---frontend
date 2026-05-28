@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import lmsService from "@/services/lmsService";
-import { Course } from "@/types";
+import { organizationService } from "@/services/organizationService";
+import { Course, Organization } from "@/types";
 
 export function EditCourseModal({ course, onClose, onSuccess }: {
   course: Course;
@@ -14,8 +15,27 @@ export function EditCourseModal({ course, onClose, onSuccess }: {
     category: course.category || "",
     level: course.level || "BEGINNER",
     thumbnail_url: course.thumbnail_url || "",
+    visibility: course.visibility || "PUBLIC" as "PUBLIC" | "ORG_ONLY",
+    org_id: course.org_id || undefined as number | undefined,
   });
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [orgLoading, setOrgLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchOrgs() {
+      try {
+        setOrgLoading(true);
+        const list = await organizationService.getMyOrgs();
+        setOrgs(list);
+      } catch (err) {
+        console.error("Failed to load organizations:", err);
+      } finally {
+        setOrgLoading(false);
+      }
+    }
+    fetchOrgs();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +48,8 @@ export function EditCourseModal({ course, onClose, onSuccess }: {
         category: formData.category || undefined,
         level: formData.level || undefined,
         thumbnail_url: formData.thumbnail_url || undefined,
+        visibility: formData.visibility,
+        org_id: formData.org_id,
       });
       alert("Cập nhật khóa học thành công!");
       onSuccess();
@@ -88,6 +110,41 @@ export function EditCourseModal({ course, onClose, onSuccess }: {
                   <option value="ALL_LEVELS">Mọi cấp độ</option>
                 </select>
               </div>
+            </div>
+            {/* Organization Select */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Tổ chức sở hữu *</label>
+              {orgLoading ? (
+                <div className="text-sm text-slate-500 animate-pulse py-2">Đang tải danh sách tổ chức...</div>
+              ) : (
+                <select
+                  value={formData.org_id || ""}
+                  onChange={(e) => setFormData({ ...formData, org_id: Number(e.target.value) })}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                >
+                  {orgs.length === 0 ? (
+                    <option value="">Không thuộc tổ chức nào (Mặc định: Big Data Club)</option>
+                  ) : (
+                    orgs.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name} ({org.slug})
+                      </option>
+                    ))
+                  )}
+                </select>
+              )}
+            </div>
+            {/* Visibility Select */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Khả năng hiển thị</label>
+              <select
+                value={formData.visibility}
+                onChange={(e) => setFormData({ ...formData, visibility: e.target.value as "PUBLIC" | "ORG_ONLY" })}
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+              >
+                <option value="PUBLIC">🌐 Public — Ai cũng có thể đăng ký</option>
+                <option value="ORG_ONLY">🔒 Chỉ thành viên tổ chức</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL ảnh đại diện</label>

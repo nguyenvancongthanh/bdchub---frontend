@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import lmsService from "@/services/lmsService";
+import { organizationService } from "@/services/organizationService";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/lms/teacher/upload/FileUpload";
-import { FileInfo } from "@/types";
+import { FileInfo, Organization } from "@/types";
 
 const COURSE_LEVELS = [
   { value: "BEGINNER", label: "Cơ bản" },
@@ -18,6 +19,8 @@ export default function CreateCoursePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [orgLoading, setOrgLoading] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -25,7 +28,27 @@ export default function CreateCoursePage() {
     level: "BEGINNER",
     thumbnail_url: "",
     visibility: "PUBLIC" as "PUBLIC" | "ORG_ONLY",
+    org_id: undefined as number | undefined,
   });
+
+  useEffect(() => {
+    async function fetchOrgs() {
+      try {
+        setOrgLoading(true);
+        const list = await organizationService.getMyOrgs();
+        setOrgs(list);
+        if (list.length > 0) {
+          const defaultOrg = list.find(o => o.slug === "bdc") || list[0];
+          setFormData(prev => ({ ...prev, org_id: defaultOrg.id }));
+        }
+      } catch (err) {
+        console.error("Failed to load organizations:", err);
+      } finally {
+        setOrgLoading(false);
+      }
+    }
+    fetchOrgs();
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -62,6 +85,7 @@ export default function CreateCoursePage() {
         level: formData.level || undefined,
         thumbnail_url: formData.thumbnail_url ? formData.thumbnail_url : undefined,
         visibility: formData.visibility,
+        org_id: formData.org_id,
       });
       
       alert("Tạo khóa học thành công!");
@@ -161,6 +185,35 @@ export default function CreateCoursePage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Organization Select */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Tổ chức sở hữu <span className="text-red-500">*</span>
+            </label>
+            {orgLoading ? (
+              <div className="text-sm text-slate-500 animate-pulse py-2.5">Đang tải danh sách tổ chức...</div>
+            ) : (
+              <select
+                value={formData.org_id || ""}
+                onChange={(e) => setFormData({ ...formData, org_id: Number(e.target.value) })}
+                className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+              >
+                {orgs.length === 0 ? (
+                  <option value="">Không thuộc tổ chức nào (Mặc định: Big Data Club)</option>
+                ) : (
+                  orgs.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name} ({org.slug})
+                    </option>
+                  ))
+                )}
+              </select>
+            )}
+            <p className="text-xs text-slate-400 mt-1.5">
+              Chọn tổ chức chịu trách nhiệm quản lý và sở hữu khóa học này.
+            </p>
           </div>
 
           {/* Visibility */}
