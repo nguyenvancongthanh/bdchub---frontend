@@ -38,6 +38,7 @@ export default function HPCSummerSchoolPage() {
   const [lang, setLang]                 = useState<Lang>("en");
   const t = T[lang];
   const [step, setStep]                 = useState(1);
+  const [direction, setDirection]       = useState<"next" | "prev">("next");
   const [form, setForm]                 = useState<FormData>(EMPTY);
   const [errors, setErrors]             = useState<Errors>({});
   const [uploadingCv, setUploadingCv]   = useState(false);
@@ -132,8 +133,8 @@ export default function HPCSummerSchoolPage() {
     setErrors(e); return Object.keys(e).length === 0;
   };
 
-  const next = () => { if (validate()) { setStep(s => s + 1); window.scrollTo({ top: 0, behavior: "smooth" }); } };
-  const prev = () => { setStep(s => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const next = () => { if (validate()) { setDirection("next"); setStep(s => s + 1); window.scrollTo({ top: 0, behavior: "smooth" }); } };
+  const prev = () => { setDirection("prev"); setStep(s => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const submit = async () => {
     if (!validate()) return;
@@ -185,14 +186,14 @@ export default function HPCSummerSchoolPage() {
   const progressPct = Math.round(((step - 1) / (t.steps.length - 1)) * 100);
 
   return (
-    <div className="w-full">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+    <div className="w-full overflow-x-hidden pb-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-2 sm:py-3.5">
 
         {/* ── Compact header bar ── */}
-        <div className="flex items-center justify-between gap-4 mb-8 pb-5 border-b border-slate-200/80 dark:border-slate-800/60">
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200/80 dark:border-slate-800/60">
           {/* Left: logo + title */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="relative w-12 h-12 flex-shrink-0 transform hover:rotate-6 transition-transform duration-300 bg-white/80 dark:bg-white/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-100 dark:border-white/20 shadow-sm">
+            <div className="relative w-12 h-12 flex-shrink-0 transform hover:rotate-6 transition-transform duration-300 bg-white/60 dark:bg-white/60 backdrop-blur-md p-1.5 rounded-xl border border-slate-100 dark:border-white/20 shadow-sm">
               <div className="relative w-full h-full">
                 <Image src={hpcLogo} alt="HPC Summer School" fill className="object-contain dark:brightness-110 dark:contrast-110" />
               </div>
@@ -215,7 +216,7 @@ export default function HPCSummerSchoolPage() {
           {/* Right: org logos + theme + lang */}
           <div className="flex items-center gap-3.5 flex-shrink-0">
             {/* Org logos — hidden on mobile */}
-            <div className="hidden sm:flex items-center gap-3 bg-white/80 dark:bg-white/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-100 dark:border-white/20 shadow-sm">
+            <div className="hidden sm:flex items-center gap-3 bg-white/60 dark:bg-white/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-100 dark:border-white/20 shadow-sm">
               {ORGANIZERS.map(o => (
                 <div key={o.alt} className={`relative flex-shrink-0 ${o.cls}`}>
                   <Image
@@ -229,7 +230,7 @@ export default function HPCSummerSchoolPage() {
             </div>
             <div className="w-px h-5 bg-slate-200 dark:bg-slate-700/60 hidden sm:block" />
             {/* Theme + Lang controls */}
-            <div className="flex items-center gap-1 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md border border-slate-100 dark:border-slate-800/50 rounded-full p-1 h-12 shadow-sm shadow-slate-100/50 dark:shadow-none">
+            <div className="flex items-center gap-1 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-100 dark:border-slate-800/50 rounded-full p-1 h-12 shadow-sm shadow-slate-100/50 dark:shadow-none">
               <ThemeToggle size={15} className="!rounded-full !p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-200" />
               <div className="w-px h-5 bg-slate-200 dark:bg-slate-700/60" />
               <style>{`
@@ -247,6 +248,46 @@ export default function HPCSummerSchoolPage() {
                 }
                 .animate-lang-slide {
                   animation: langSlideUp 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                @keyframes slideInFromRight {
+                  0% {
+                    transform: translateX(80px);
+                    opacity: 0;
+                    filter: blur(10px);
+                  }
+                  100% {
+                    transform: translateX(0);
+                    opacity: 1;
+                    filter: blur(0);
+                  }
+                }
+                @keyframes slideInFromLeft {
+                  0% {
+                    transform: translateX(-80px);
+                    opacity: 0;
+                    filter: blur(10px);
+                  }
+                  100% {
+                    transform: translateX(0);
+                    opacity: 1;
+                    filter: blur(0);
+                  }
+                }
+                .animate-slide-next {
+                  will-change: transform, opacity;
+                  animation: slideInFromRight 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .animate-slide-prev {
+                  will-change: transform, opacity;
+                  animation: slideInFromLeft 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                select option {
+                  background-color: #ffffff;
+                  color: #0f172a;
+                }
+                .dark select option {
+                  background-color: #0f172a;
+                  color: #f8fafc;
                 }
               `}</style>
               <button
@@ -267,7 +308,7 @@ export default function HPCSummerSchoolPage() {
 
         {/* ── Progress tracker (Integrated Overlay Stepper) ── */}
         {!submitted && !alreadySubmitted && (
-          <div className="relative mb-14 mt-6 w-full">
+          <div className="relative mb-11 mt-4 w-full">
             {/* Background Track Line - Anchored at the centers of first and last circles */}
             <div className="absolute top-[18px] left-[18px] right-[18px] h-1 bg-slate-200 dark:bg-slate-800/80 -translate-y-1/2 rounded-full" />
             
@@ -315,38 +356,40 @@ export default function HPCSummerSchoolPage() {
           onClose={() => setDraftRestored(false)}
         />
 
-        <div className="bg-white/70 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/50 rounded-3xl p-6 sm:p-10 shadow-xl shadow-slate-100/80 dark:shadow-none transition-all duration-300">
+        <div className="bg-white/70 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/50 rounded-3xl p-5 sm:p-8 shadow-xl shadow-slate-100/80 dark:shadow-none transition-all duration-300">
           {submitted ? (
             <Success t={t} name={form.fullName} />
           ) : alreadySubmitted ? (
             <AlreadySubmitted lang={lang} name={savedName} onClear={handleClear} />
           ) : (
             <>
-              {step === 1 && (
-                <Step1
-                  t={t}
-                  agreed={form.agreePrivacy}
-                  onToggle={() => {
-                    setForm(p => ({ ...p, agreePrivacy: !p.agreePrivacy }));
-                    setErrors(p => { const e = { ...p }; delete e.agreePrivacy; return e; });
-                  }}
-                  error={errors.agreePrivacy}
-                />
-              )}
-              {step === 2 && <Step2 t={t} data={form} errors={errors} onChange={set} />}
-              {step === 3 && (
-                <Step3
-                  t={t}
-                  data={form}
-                  errors={errors}
-                  onChange={set}
-                  onFileChange={handleFile}
-                  uploadingCv={uploadingCv}
-                />
-              )}
+              <div key={step} className={direction === "next" ? "animate-slide-next" : "animate-slide-prev"}>
+                {step === 1 && (
+                  <Step1
+                    t={t}
+                    agreed={form.agreePrivacy}
+                    onToggle={() => {
+                      setForm(p => ({ ...p, agreePrivacy: !p.agreePrivacy }));
+                      setErrors(p => { const e = { ...p }; delete e.agreePrivacy; return e; });
+                    }}
+                    error={errors.agreePrivacy}
+                  />
+                )}
+                {step === 2 && <Step2 t={t} data={form} errors={errors} onChange={set} />}
+                {step === 3 && (
+                  <Step3
+                    t={t}
+                    data={form}
+                    errors={errors}
+                    onChange={set}
+                    onFileChange={handleFile}
+                    uploadingCv={uploadingCv}
+                  />
+                )}
+              </div>
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-10 pt-8 border-t border-slate-100 dark:border-slate-850/30">
+              <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100 dark:border-slate-850/30">
                 <button
                   onClick={prev} disabled={step === 1}
                   className={`flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 active:scale-95

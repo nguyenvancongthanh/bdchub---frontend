@@ -115,10 +115,12 @@ export function Step3({
         <div className="space-y-4 pt-1">
           <div>
             <FL>{t.sourceLabel}</FL>
-            <FSel value={data.source} onChange={e => onChange("source", e.target.value)}>
-              <option value="">{t.sourcePh}</option>
-              {t.sourceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </FSel>
+            <FSel
+              value={data.source}
+              onChange={v => onChange("source", v)}
+              options={t.sourceOptions as any}
+              placeholder={t.sourcePh}
+            />
           </div>
           {showOther && (
             <div className="animate-fadeIn">

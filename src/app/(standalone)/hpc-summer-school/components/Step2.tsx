@@ -33,10 +33,13 @@ export function Step2({ t, data, errors, onChange }: Step2Props) {
         <div className="sm:col-span-1"><FL req>{t.major}</FL><FIn type="text" placeholder={t.majorPh} value={data.major} onChange={e => onChange("major", e.target.value)} error={errors.major} /></div>
         <div>
           <FL req>{t.yearOfStudy}</FL>
-          <FSel value={data.year} onChange={e => onChange("year", e.target.value)} error={errors.year}>
-            <option value="">{t.yearPh}</option>
-            {t.years.map(y => <option key={y} value={y}>{y}</option>)}
-          </FSel>
+          <FSel
+            value={data.year}
+            onChange={v => onChange("year", v)}
+            options={t.years.map(y => ({ value: y, label: y }))}
+            placeholder={t.yearPh}
+            error={errors.year}
+          />
         </div>
         <div><FL req>{t.gpa}</FL><FIn type="text" placeholder={t.gpaPh} value={data.gpa} onChange={e => onChange("gpa", e.target.value)} error={errors.gpa} /></div>
       </div>
