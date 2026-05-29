@@ -22,9 +22,9 @@ export function HeroVisualCore({
       opacity: 1,
       scale: 1,
       transition: {
-        duration: statsDuration + 0.2,
+        duration: statsDuration + 0.1, // Snappier 0.7s reveal
         ease: [0.16, 1, 0.3, 1],
-        delay: 1.75,
+        delay: 0.5, // Start immediately as title completes its peak
       },
     },
   };
@@ -35,9 +35,9 @@ export function HeroVisualCore({
       opacity: 1,
       scale: 1,
       transition: {
-        duration: statsDuration + 0.2,
+        duration: statsDuration + 0.1, // Snappier 0.7s reveal
         ease: [0.16, 1, 0.3, 1],
-        delay: 1.75,
+        delay: 0.55, // Snappy offset cascade
       },
     },
   };
@@ -48,9 +48,9 @@ export function HeroVisualCore({
       opacity: 1,
       scale: 1,
       transition: {
-        duration: statsDuration,
+        duration: statsDuration, // Snappy 0.6s reveal
         ease: [0.16, 1, 0.3, 1],
-        delay: 1.75,
+        delay: 0.6, // Synchronized with logo & card 0
       },
     },
   };
@@ -61,9 +61,14 @@ export function HeroVisualCore({
       animate="visible"
       className="lg:col-span-5 relative w-full h-[540px] hidden lg:flex items-center justify-center select-none"
     >
-      
       {/* Ambient Glowing Cores */}
-      <div className="absolute w-80 h-80 rounded-full bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 dark:from-blue-500/5 dark:to-cyan-500/5 blur-3xl animate-pulse" />
+      <div className="absolute w-80 h-80 rounded-full bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 dark:from-blue-500/5 dark:to-cyan-500/5 blur-3xl animate-pulse pointer-events-none" />
+      
+      {/* Dedicated Card Glow Backdrops (Subtle ambient light directly behind each card's coordinates to enhance backdrop-blur) */}
+      <div className="absolute top-[6%] left-[2%] w-44 h-44 rounded-full bg-blue-500/12 dark:bg-blue-500/6 blur-3xl pointer-events-none" />
+      <div className="absolute top-[22%] right-[0%] w-44 h-44 rounded-full bg-cyan-500/12 dark:bg-cyan-500/6 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[22%] left-[2%] w-44 h-44 rounded-full bg-cyan-500/12 dark:bg-cyan-500/6 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[6%] right-[2%] w-44 h-44 rounded-full bg-blue-500/12 dark:bg-blue-500/6 blur-3xl pointer-events-none" />
       
       {/* Outer Orbit (Dashed) with Blue Glowing Satellite & Continuous SVG Trail */}
       <motion.div
