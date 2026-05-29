@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 import hpcLogo    from "@/assets/hpc-school-logo.png";
 import hcmutLogo  from "@/assets/hcmut.png";
@@ -27,12 +28,12 @@ interface FormData {
 interface Errors { [key: string]: string; }
 
 const ORGANIZERS = [
-  { src: hcmutLogo, alt: "HCMUT" },
-  { src: hpccLogo,  alt: "HPCC" },
-  { src: cseLogo,   alt: "CSE" },
-  { src: bdcLogo,   alt: "Big Data Club" },
-  { src: doanLogo,  alt: "Youth Union" },
-  { src: hoiLogo,   alt: "Student Association" },
+  { src: hcmutLogo, alt: "HCMUT",              cls: "w-6 h-6" },
+  { src: hpccLogo,  alt: "HPCC",               cls: "w-9 h-9" },
+  { src: cseLogo,   alt: "CSE",               cls: "w-6 h-6" },
+  { src: bdcLogo,   alt: "Big Data Club",     cls: "w-6 h-6" },
+  { src: doanLogo,  alt: "Youth Union",       cls: "w-6 h-6" },
+  { src: hoiLogo,   alt: "Student Association", cls: "w-6 h-6" },
 ];
 
 // ─── Translations ─────────────────────────────────────────────────────────────
@@ -634,7 +635,7 @@ export default function HPCSummerSchoolPage() {
         <div className="flex items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-200 dark:border-slate-800">
           {/* Left: logo + title */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="relative w-10 h-10 flex-shrink-0">
+            <div className="relative w-12 h-12 flex-shrink-0">
               <Image src={hpcLogo} alt="HPC Summer School" fill className="object-contain" />
             </div>
             <div className="min-w-0">
@@ -645,26 +646,32 @@ export default function HPCSummerSchoolPage() {
             </div>
           </div>
 
-          {/* Right: org logos + lang toggle */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Right: org logos + theme + lang */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Org logos — hidden on mobile */}
             <div className="hidden sm:flex items-center gap-2">
               {ORGANIZERS.map(o => (
-                <div key={o.alt} className="relative w-6 h-6">
+                <div key={o.alt} className={`relative flex-shrink-0 ${o.cls}`}>
                   <Image src={o.src} alt={o.alt} fill className="object-contain opacity-70 hover:opacity-100 transition-opacity" />
                 </div>
               ))}
             </div>
             <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-            <button
-              onClick={() => setLang(l => l === "en" ? "vi" : "en")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-cyan-400 dark:hover:border-cyan-600 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-200 active:scale-95"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
-              </svg>
-              {t.langToggle}
-            </button>
+            {/* Theme + Lang controls */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1">
+              <ThemeToggle size={15} className="!rounded-lg !p-1.5" />
+              <div className="w-px h-4 bg-slate-300 dark:bg-slate-600" />
+              <button
+                onClick={() => setLang(l => l === "en" ? "vi" : "en")}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-200 active:scale-95"
+                title={t.langToggle}
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
+                </svg>
+                {lang === "en" ? "VI" : "EN"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -746,7 +753,7 @@ export default function HPCSummerSchoolPage() {
         <footer className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 dark:text-slate-500">
           <div className="flex items-center gap-3">
             {ORGANIZERS.map(o => (
-              <div key={o.alt} className="relative w-6 h-6">
+              <div key={o.alt} className={`relative flex-shrink-0 ${o.cls}`}>
                 <Image src={o.src} alt={o.alt} fill className="object-contain opacity-50 hover:opacity-80 transition-opacity" />
               </div>
             ))}
