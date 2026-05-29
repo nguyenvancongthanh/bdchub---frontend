@@ -138,6 +138,10 @@ const nextConfig: NextConfig = {
         source: '/files/:path*',
         destination: '/api/files/:path*',
       },
+      {
+        source: '/monitor/:path*',
+        destination: 'http://localhost:3010/monitor/:path*',
+      },
     ];
   },
 
