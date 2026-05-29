@@ -140,7 +140,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/monitor/:path*',
-        destination: 'http://localhost:3010/monitor/:path*',
+        destination: 'http://bdc-grafana:3000/monitor/:path*',
       },
     ];
   },
