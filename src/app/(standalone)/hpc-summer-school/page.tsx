@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
@@ -531,7 +531,67 @@ function Success({ t, name }: { t: Translation; name: string }) {
   );
 }
 
+// ─── Already Submitted Screen ────────────────────────────────────────────────
+const ALREADY_MSG = {
+  en: {
+    tag: "Already Submitted",
+    title1: "You've already", title2: "applied!",
+    desc: "Our records show that an application has already been submitted from this device. If you believe this is a mistake, please contact the organizing committee directly.",
+    contact: "Get in touch:",
+    clearBtn: "Clear record and re-submit (use with caution)",
+    clearConfirm: "This will clear your submission record from this device. Continue?",
+  },
+  vi: {
+    tag: "Đã Nộp Đơn",
+    title1: "Bạn đã", title2: "nộp đơn rồi!",
+    desc: "Hệ thống ghi nhận rằng một hồ sơ đã được nộp từ thiết bị này. Nếu đây là nhầm lẫn, vui lòng liên hệ trực tiếp với ban tổ chức.",
+    contact: "Liên hệ ban tổ chức:",
+    clearBtn: "Xóa lịch sử và nộp lại (cẩn thận)",
+    clearConfirm: "Thao tác này sẽ xóa lịch sử nộp đơn trên thiết bị. Tiếp tục?",
+  },
+};
+
+function AlreadySubmitted({ lang, name, onClear }: { lang: Lang; name: string; onClear: () => void }) {
+  const m = ALREADY_MSG[lang];
+  return (
+    <div className="py-14 text-center space-y-7">
+      <div className="relative inline-flex">
+        <div className="w-24 h-24 rounded-full border-2 border-amber-400 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
+          <svg className="w-12 h-12 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div className="absolute inset-0 rounded-full bg-amber-400/15 dark:bg-amber-400/10 animate-ping" />
+      </div>
+      <div className="space-y-2">
+        <p className="text-amber-600 dark:text-amber-400 uppercase tracking-[0.25em] text-xs font-bold">{m.tag}</p>
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white leading-snug">
+          {m.title1}<br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">{name || "Applicant"}</span>
+          {" "}{m.title2}
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-md mx-auto">{m.desc}</p>
+      </div>
+      <div className="border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-5 space-y-2 max-w-xs mx-auto">
+        <p className="text-slate-400 dark:text-slate-500 text-xs">{m.contact}</p>
+        <a href="mailto:hpcc@hcmut.edu.vn" className="text-sm font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 transition-colors">
+          hpcc@hcmut.edu.vn →
+        </a>
+      </div>
+      <button
+        onClick={onClear}
+        className="text-xs text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 underline underline-offset-2 transition-colors"
+      >
+        {m.clearBtn}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
+const LS_DRAFT = "hpc_ss_2026_draft";
+const LS_DONE  = "hpc_ss_2026_submitted";
+
 const EMPTY: FormData = {
   agreePrivacy: false, fullName: "", dob: "", studentId: "", emailUni: "",
   emailPersonal: "", phone: "", university: "", major: "", year: "", gpa: "",
@@ -540,14 +600,60 @@ const EMPTY: FormData = {
 };
 
 export default function HPCSummerSchoolPage() {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang]                 = useState<Lang>("en");
   const t = T[lang];
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormData>(EMPTY);
-  const [errors, setErrors] = useState<Errors>({});
-  const [uploadingCv, setUploadingCv] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [step, setStep]                 = useState(1);
+  const [form, setForm]                 = useState<FormData>(EMPTY);
+  const [errors, setErrors]             = useState<Errors>({});
+  const [uploadingCv, setUploadingCv]   = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
+  const [submitted, setSubmitted]       = useState(false);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [savedName, setSavedName]       = useState("");
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // ── Mount: check submitted flag or restore draft ──────────────────────────
+  useEffect(() => {
+    try {
+      const done = localStorage.getItem(LS_DONE);
+      if (done) {
+        const parsed = JSON.parse(done);
+        setSavedName(parsed.name || "");
+        setAlreadySubmitted(true);
+        return;
+      }
+      const raw = localStorage.getItem(LS_DRAFT);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        setForm(prev => ({ ...prev, ...draft, cvFile: null, cvUrl: "", agreePrivacy: false }));
+        if (draft._step && draft._step > 1) setStep(draft._step);
+        if (draft._lang) setLang(draft._lang as Lang);
+        setDraftRestored(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // ── Auto-save draft (debounced 600 ms) ────────────────────────────────────
+  useEffect(() => {
+    if (submitted || alreadySubmitted) return;
+    const timer = setTimeout(() => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { cvFile, cvUrl, ...saveable } = form;
+        localStorage.setItem(LS_DRAFT, JSON.stringify({ ...saveable, _step: step, _lang: lang }));
+      } catch { /* ignore */ }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form, step, lang, submitted, alreadySubmitted]);
+
+  const handleClear = () => {
+    const msg = lang === "en"
+      ? ALREADY_MSG.en.clearConfirm
+      : ALREADY_MSG.vi.clearConfirm;
+    if (!confirm(msg)) return;
+    try { localStorage.removeItem(LS_DONE); localStorage.removeItem(LS_DRAFT); } catch { /* ignore */ }
+    window.location.reload();
+  };
 
   const set = (field: keyof FormData, value: string) => {
     setForm(p => ({ ...p, [field]: value }));
@@ -598,6 +704,14 @@ export default function HPCSummerSchoolPage() {
     if (!validate()) return;
     setSubmitting(true);
     try {
+      // Capture client IP (non-critical — silently skip on failure)
+      let clientIp = "Unknown";
+      try {
+        const ipRes  = await fetch("/api/get-ip");
+        const ipJson = await ipRes.json();
+        clientIp = ipJson.ip || "Unknown";
+      } catch { /* ignore */ }
+
       const answers: Record<string, string> = {
         full_name: form.fullName, date_of_birth: form.dob, student_id: form.studentId,
         university_email: form.emailUni, personal_email: form.emailPersonal, phone: form.phone,
@@ -605,7 +719,8 @@ export default function HPCSummerSchoolPage() {
         cv_url: form.cvUrl, research_interests: form.researchInterests,
         publications: form.publications, motivation: form.motivation,
         achievements: form.achievements, future_plans: form.futurePlans,
-        source: form.source, source_other: form.sourceOther, form_language: lang,
+        source: form.source, source_other: form.sourceOther,
+        form_language: lang, client_ip: clientIp,
       };
       const res = await fetch("/api/submit-form", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -619,8 +734,15 @@ export default function HPCSummerSchoolPage() {
         }),
       });
       const json = await res.json();
-      if (json.success) { setSubmitted(true); window.scrollTo({ top: 0, behavior: "smooth" }); }
-      else throw new Error(json.message);
+      if (json.success) {
+        // Persist submission flag → prevents re-submission from this browser
+        try {
+          localStorage.setItem(LS_DONE, JSON.stringify({ name: form.fullName, at: new Date().toISOString() }));
+          localStorage.removeItem(LS_DRAFT);
+        } catch { /* ignore */ }
+        setSubmitted(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else throw new Error(json.message);
     } catch (err) { alert("❌ An error occurred. Please try again."); console.error(err); }
     finally { setSubmitting(false); }
   };
@@ -676,7 +798,7 @@ export default function HPCSummerSchoolPage() {
         </div>
 
         {/* ── Progress tracker ── */}
-        {!submitted && (
+        {!submitted && !alreadySubmitted && (
           <div className="mb-5">
             <div className="relative h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-3">
               <div
@@ -709,9 +831,22 @@ export default function HPCSummerSchoolPage() {
         )}
 
         {/* ── Form card ── */}
+        {/* Draft restored banner */}
+        {draftRestored && !submitted && !alreadySubmitted && (
+          <div className="mb-4 flex items-center justify-between gap-3 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/60 rounded-xl text-xs text-blue-700 dark:text-blue-300">
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+              {lang === "en" ? "Your previous progress has been restored." : "Tiến độ điền form trước đó đã được khôi phục."}
+            </span>
+            <button onClick={() => setDraftRestored(false)} className="flex-shrink-0 hover:text-blue-900 dark:hover:text-blue-100 transition-colors">✕</button>
+          </div>
+        )}
+
         <div className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-8 shadow-sm dark:shadow-none">
           {submitted ? (
             <Success t={t} name={form.fullName} />
+          ) : alreadySubmitted ? (
+            <AlreadySubmitted lang={lang} name={savedName} onClear={handleClear} />
           ) : (
             <>
               {step === 1 && <Step1 t={t} agreed={form.agreePrivacy} onToggle={() => { setForm(p => ({ ...p, agreePrivacy: !p.agreePrivacy })); setErrors(p => { const e = { ...p }; delete e.agreePrivacy; return e; }); }} error={errors.agreePrivacy} />}
