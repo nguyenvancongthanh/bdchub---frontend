@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { User } from "@/types";
 import Avatar from "./Avatar";
-import { X, Pencil, Save, Loader2, Mail, Hash, Shield, Users, GraduationCap, Star, Calendar, Activity } from "lucide-react";
+import { X, Pencil, Save, Loader2, Mail, Hash, Shield, Users, GraduationCap, Star, Calendar, Activity, Building2 } from "lucide-react";
 import { updateUser, updateUserRole } from "@/lib/users/api";
 import { mapFrontendTeamToBackend, mapFrontendTypeToBackend } from "@/lib/users/auth";
 import { fetchRoles, Role } from "@/lib/admin/rolesApi";
 import LmsUserRoleManager from "../admin/LmsUserRoleManager";
 import { fetchPublicTeams, fetchPublicTypes, Team as APITeam, UserTypeOption } from "@/lib/admin/teamsTypesApi";
+import { organizationService } from "@/services/organizationService";
 
 interface DetailModalProps {
   user: User | null;
@@ -55,7 +56,9 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
   const [editTeam, setEditTeam] = useState("");
   const [editType, setEditType] = useState("");
   const [editRole, setEditRole] = useState("");
+  const [editOrganization, setEditOrganization] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
+  const [organizations, setOrganizations] = useState<any[]>([]);
 
   // Dynamic teams & types
   const [availableTeams, setAvailableTeams] = useState<APITeam[]>([
@@ -82,6 +85,10 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
         if (data && data.length > 0) setAvailableTypes(data);
       })
       .catch(err => console.error("Failed to fetch dynamic types:", err));
+
+    organizationService.list({ limit: 100 })
+      .then(res => setOrganizations(res.items || []))
+      .catch(err => console.error("Failed to fetch organizations:", err));
   }, []);
 
   const getTeamDisplayName = (teamCode: string) => {
@@ -104,6 +111,7 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
       setEditTeam(user.team as string);
       setEditType(user.type as string);
       setEditRole(user.role as string);
+      setEditOrganization(user.organization || "");
       setIsEditing(false);
       setSaveError(null);
       setSaveSuccess(false);
@@ -124,6 +132,7 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
     setEditTeam(user.team as string);
     setEditType(user.type as string);
     setEditRole(user.role as string);
+    setEditOrganization(user.organization || "");
     setSaveError(null);
     setSaveSuccess(false);
     setIsEditing(true);
@@ -154,6 +163,7 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
         email: editEmail.trim(),
         team: mapFrontendTeamToBackend(editTeam),
         type: mapFrontendTypeToBackend(editType),
+        organization: editOrganization.trim(),
       });
 
       setSaveSuccess(true);
@@ -336,6 +346,38 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
                 </div>
               </div>
 
+              {/* Organization */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  Tổ chức (Organization)
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={editOrganization}
+                    onChange={(e) => setEditOrganization(e.target.value)}
+                    className="flex-1 px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 
+                               bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-900 dark:text-slate-50 
+                               focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
+                               transition-all duration-200 text-sm"
+                  >
+                    <option value="">-- Chọn tổ chức --</option>
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.name}>{org.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Hoặc tự nhập..."
+                    value={editOrganization}
+                    onChange={(e) => setEditOrganization(e.target.value)}
+                    className="flex-1 px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 
+                               bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-900 dark:text-slate-50 
+                               focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
+                               transition-all duration-200 text-sm"
+                  />
+                </div>
+              </div>
+
               {/* Read-only fields in edit mode */}
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <div>
@@ -448,6 +490,17 @@ export default function DetailModal({ user, onClose, isAdmin = false, onUserUpda
                         {user.status ? "Active" : "Inactive"}
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Organization */}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+                    <Building2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tổ chức</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50 truncate">{user.organization || "Chưa tham gia"}</p>
                   </div>
                 </div>
               </div>

@@ -24,4 +24,5 @@ export type User = {
   status?: boolean;
   active?: boolean;
   profilePicture?: string;
+  organization?: string;
 };

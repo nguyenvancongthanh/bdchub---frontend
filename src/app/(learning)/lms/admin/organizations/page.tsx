@@ -221,7 +221,8 @@ function OrgDetailPanel({ org, onBack, onRefresh }: OrgDetailPanelProps) {
           emails: [singleInput.trim()],
           org_role: addRole,
         });
-        if (res.not_found.length > 0) {
+        const notFound = res.not_found || [];
+        if (notFound.length > 0) {
           setError(`User with email "${singleInput}" was not found in the system.`);
         } else {
           setSingleInput("");
@@ -429,14 +430,14 @@ function OrgDetailPanel({ org, onBack, onRefresh }: OrgDetailPanelProps) {
                   Import completed successfully!
                 </p>
                 <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                  <p>• Added: <span className="font-semibold text-slate-800 dark:text-slate-200">{bulkResult.added.length}</span> members.</p>
-                  {bulkResult.not_found.length > 0 && (
+                  <p>• Added: <span className="font-semibold text-slate-800 dark:text-slate-200">{(bulkResult.added || []).length}</span> members.</p>
+                  {(bulkResult.not_found || []).length > 0 && (
                     <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
                       <p className="font-semibold text-amber-800 dark:text-amber-400 mb-1">
-                        Not found in system ({bulkResult.not_found.length}):
+                        Not found in system ({(bulkResult.not_found || []).length}):
                       </p>
                       <p className="font-mono break-all text-amber-700 dark:text-amber-400">
-                        {bulkResult.not_found.join(", ")}
+                        {(bulkResult.not_found || []).join(", ")}
                       </p>
                       <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-500">
                         * Note: These users must be created or synced in the LMS database first.

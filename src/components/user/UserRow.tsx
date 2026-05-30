@@ -11,7 +11,7 @@ export default function UserRow({ user, onClick, onToggleStatus, isAdmin }: { us
     >
       <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center px-3 sm:px-6 py-3 sm:py-4">
         {/* Name & Email */}
-        <div className="col-span-5 flex items-center gap-3">
+        <div className="col-span-3 flex items-center gap-3">
           <Avatar code={user.code} size={32} />
           <div className="min-w-0">
             <div className="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-50 truncate">
@@ -31,6 +31,11 @@ export default function UserRow({ user, onClick, onToggleStatus, isAdmin }: { us
         {/* Team */}
         <div className="col-span-1 text-center text-sm text-slate-700 dark:text-slate-300">
           {user.team}
+        </div>
+
+        {/* Org */}
+        <div className="col-span-2 text-center text-sm text-slate-700 dark:text-slate-300 truncate" title={user.organization}>
+          {user.organization || "—"}
         </div>
 
         {/* Score */}

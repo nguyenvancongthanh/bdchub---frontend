@@ -5,6 +5,8 @@ import { fetchUsers, postBulkRegister, updateUserStatus } from "@/lib/users/api"
 import { parseFile } from "@/lib/users/fileParser";
 import UserRow from "./UserRow";
 import DetailModal from "./DetailModal";
+import CreateUserModal from "./CreateUserModal";
+import BulkUploadPreviewModal from "./BulkUploadPreviewModal";
 import { mapFrontendRoleToBackend, mapFrontendTeamToBackend, mapFrontendTypeToBackend } from "@/lib/users/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { PendingUsersSection } from "./PendingUsersSection";
@@ -23,8 +25,10 @@ export default function UserApp() {
   const [roleFilter, setRoleFilter] = useState("");
 
   const [detail, setDetail] = useState<User | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [previewUsers, setPreviewUsers] = useState<any[] | null>(null);
 
-  const [sortKey, setSortKey] = useState<"name" | "role" | "team" | "score" | "dateAdded" | "status" | null>(null);
+  const [sortKey, setSortKey] = useState<"name" | "role" | "team" | "score" | "dateAdded" | "status" | "organization" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null);
 
   // simple sort toggler
@@ -66,21 +70,7 @@ export default function UserApp() {
         alert("No valid rows found in file");
         return;
       }
-      // map to backend shape
-      const payload = rows.map(r => ({
-        name: r.name,
-        email: r.email,
-        role: mapFrontendRoleToBackend(r.role ?? "Member", availableRoles),
-        team: mapFrontendTeamToBackend(r.team ?? "Research"),
-        code: r.code,
-        type: mapFrontendTypeToBackend(r.type ?? "CLC"),
-      }));
-      const res = await postBulkRegister(payload);
-      if (!res) {
-        throw new Error("Fail to bulk regiter")
-      }
-      alert("Bulk create success");
-      await load();
+      setPreviewUsers(rows);
     } catch (err: any) {
       console.error(err);
       alert("Upload failed: " + (err.message || err));
@@ -136,6 +126,7 @@ export default function UserApp() {
           case "score": return (Number(a.score) - Number(b.score)) * dir;
           case "dateAdded": return a.dateAdded && b.dateAdded ? (new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime()) * dir : 0;
           case "status": return ((a.status?1:0) - (b.status?1:0)) * dir;
+          case "organization": return (a.organization || "").localeCompare(b.organization || "") * dir;
           default: return 0;
         }
       });
@@ -227,12 +218,18 @@ export default function UserApp() {
                 }}
               />
               <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm active:scale-95 transition-all duration-200"
+              >
+                Add User
+              </button>
+              <button
                 onClick={() => document.getElementById("user-file-input")?.click()}
                 className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-all duration-200 active:scale-95"
               >
                 Bulk upload
               </button>
-
+ 
               {/* Refresh */}
               <button
                 onClick={load}
@@ -252,7 +249,7 @@ export default function UserApp() {
           <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 min-w-max sm:min-w-full">
             <button
               onClick={() => toggleSort("name")}
-              className="col-span-5 text-left flex items-center gap-2 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
+              className="col-span-3 text-left flex items-center gap-2 hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
             >
               <span>Username</span>
               {sortKey === "name" && (
@@ -272,6 +269,12 @@ export default function UserApp() {
               className="col-span-1 text-center hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
             >
               Team {sortKey === "team" && (sortDir === "asc" ? "▲" : "▼")}
+            </button>
+            <button
+              onClick={() => toggleSort("organization")}
+              className="col-span-2 text-center hover:text-slate-900 dark:hover:text-slate-100 transition-colors duration-200"
+            >
+              Org {sortKey === "organization" && (sortDir === "asc" ? "▲" : "▼")}
             </button>
             <button
               onClick={() => toggleSort("score")}
@@ -314,6 +317,8 @@ export default function UserApp() {
       </div>
 
       <DetailModal user={detail} onClose={() => setDetail(null)} isAdmin={isAdmin} onUserUpdated={load} />
+      <CreateUserModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onUserCreated={load} />
+      <BulkUploadPreviewModal open={previewUsers !== null} onClose={() => setPreviewUsers(null)} parsedUsers={previewUsers || []} onImportSuccess={load} />
     </div>
   );
 }

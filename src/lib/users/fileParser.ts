@@ -1,7 +1,7 @@
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
-export type ParsedRow = { name: string; email: string; role?: string; team?: string, code?:string, type?:string };
+export type ParsedRow = { name: string; email: string; role?: string; team?: string; code?: string; type?: string; organization?: string };
 
 export function parseCsvFile(file: File): Promise<ParsedRow[]> {
   return new Promise((resolve, reject) => {
@@ -16,6 +16,7 @@ export function parseCsvFile(file: File): Promise<ParsedRow[]> {
           team: (r.team || r.Team || "Research").trim(),
           code: (r.code || r.Code || "2310000").trim(),
           type: (r.type || r.Type || "CLC").trim(),
+          organization: (r.organization || r.org || r.Org || r.Organization || "").trim(),
         })).filter(r => r.name && r.email);
         resolve(rows);
       },
@@ -39,6 +40,9 @@ export function parseXlsxFile(file: File): Promise<ParsedRow[]> {
           email: (r.email || r.Email || "").trim(),
           role: (r.role || r.Role || "Member").trim(),
           team: (r.team || r.Team || "Research").trim(),
+          code: (r.code || r.Code || "2310000").trim(),
+          type: (r.type || r.Type || "CLC").trim(),
+          organization: (r.organization || r.org || r.Org || r.Organization || "").trim(),
         })).filter(r => r.name && r.email);
         resolve(rows);
       } catch (err) {

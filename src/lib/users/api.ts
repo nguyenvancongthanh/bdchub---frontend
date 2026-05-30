@@ -38,6 +38,7 @@ export async function postBulkRegister(
     team: string;
     code?: string;
     type: string;
+    organization?: string;
   }>
 ) {
   const res = await fetch(`/apiv1/api/auth/register/bulk`, {
@@ -62,6 +63,7 @@ export async function postCreateUserSingle(user: {
   team: string;
   code: string;
   type: string;
+  organization?: string;
 }) {
   return postBulkRegister([user]);
 }
@@ -73,6 +75,7 @@ export async function updateUser(
     email: string;
     team?: string;
     type?: string;
+    organization?: string;
   }
 ): Promise<User> {
   const res = await fetch(`/apiv1/api/users/${id}`, {
