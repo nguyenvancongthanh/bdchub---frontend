@@ -15,7 +15,14 @@ export function Step2({ t, data, errors, onChange }: Step2Props) {
 
   const uniOptions = universitiesData.map(uni => ({
     value: uni.value,
-    label: isVi ? uni.labelVi : uni.labelEn
+    label: isVi ? uni.labelVi : uni.labelEn,
+    keywords: [
+      uni.labelVi,
+      uni.labelEn,
+      uni.abbr,
+      uni.fullNameVi,
+      uni.value
+    ].filter(Boolean) as string[]
   }));
 
   // If university has a value and it is not one of the predefined ones, it is custom (Other)
@@ -69,27 +76,33 @@ export function Step2({ t, data, errors, onChange }: Step2Props) {
       </div>
       <div>
         <FL req>{t.university}</FL>
-        <FSel
-          value={currentDropdownValue}
-          onChange={handleDropdownChange}
-          options={uniOptions}
-          placeholder={isVi ? "-- Chọn trường học --" : "-- Select University --"}
-          error={showOtherInput ? undefined : errors.university}
-          searchable={true}
-          isVi={isVi}
-        />
-        {showOtherInput && (
-          <div className="mt-3.5 animate-fadeIn">
-            <FL req>{isVi ? "Nhập tên trường khác" : "Specify your university"}</FL>
-            <FIn
-              type="text"
-              placeholder={isVi ? "Ví dụ: Trường Đại học Bách khoa, ĐHQG TP.HCM" : "e.g. HCMC University of Technology"}
-              value={data.university}
-              onChange={e => onChange("university", e.target.value)}
-              error={errors.university}
-            />
-          </div>
-        )}
+        <div className={`relative transition-all duration-300 space-y-3.5 ${
+          showOtherInput
+            ? "pl-4.5 border-l-2 border-cyan-500/60 dark:border-cyan-500/40"
+            : "pl-0 border-l-0 border-transparent"
+        }`}>
+          <FSel
+            value={currentDropdownValue}
+            onChange={handleDropdownChange}
+            options={uniOptions}
+            placeholder={isVi ? "-- Chọn trường học --" : "-- Select University --"}
+            error={showOtherInput ? undefined : errors.university}
+            searchable={true}
+            isVi={isVi}
+          />
+          {showOtherInput && (
+            <div className="animate-fadeIn">
+              <FL req>{isVi ? "Nhập tên trường khác" : "Specify your university"}</FL>
+              <FIn
+                type="text"
+                placeholder={isVi ? "Ví dụ: Trường Đại học Bách khoa, ĐHQG TP.HCM" : "e.g. HCMC University of Technology"}
+                value={data.university}
+                onChange={e => onChange("university", e.target.value)}
+                error={errors.university}
+              />
+            </div>
+          )}
+        </div>
       </div>
       <div className="grid sm:grid-cols-3 gap-4">
         <div className="sm:col-span-1"><FL req>{t.major}</FL><FIn type="text" placeholder={t.majorPh} value={data.major} onChange={e => onChange("major", e.target.value)} error={errors.major} /></div>

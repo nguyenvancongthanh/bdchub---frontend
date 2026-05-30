@@ -54,7 +54,7 @@ export function FSel({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; keywords?: string[] }[];
   placeholder: string;
   error?: string;
   searchable?: boolean;
@@ -82,12 +82,30 @@ export function FSel({
 
   const selectedOption = options.find(o => o.value === value);
 
+  const removeAccents = (str: string) => {
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase();
+  };
+
+  const normalizedQuery = removeAccents(searchQuery.trim());
+
   const filteredOptions = searchQuery.trim() === ""
     ? options
-    : options.filter(o =>
-        o.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.value.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    : options.filter(o => {
+        const normLabel = removeAccents(o.label);
+        const normValue = removeAccents(o.value);
+        if (normLabel.includes(normalizedQuery) || normValue.includes(normalizedQuery)) {
+          return true;
+        }
+        if (o.keywords) {
+          return o.keywords.some(kw => removeAccents(kw).includes(normalizedQuery));
+        }
+        return false;
+      });
 
   return (
     <div ref={ref} className="relative w-full">
