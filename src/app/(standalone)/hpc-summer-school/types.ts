@@ -44,7 +44,7 @@ export interface Organizer {
 
 export const ORGANIZERS: Organizer[] = [
   { src: hcmutLogo, alt: "HCMUT",              cls: "w-6 h-6" },
-  { src: hpccLogo,  alt: "HPCC",               cls: "w-9 h-9" },
+  { src: hpccLogo,  alt: "HPCC",               cls: "w-16 h-9" },
   { src: cseLogo,   alt: "CSE",               cls: "w-6 h-6" },
   { src: bdcLogo,   alt: "Big Data Club",     cls: "w-6 h-6" },
   { src: doanLogo,  alt: "Youth Union",       cls: "w-6 h-6" },
