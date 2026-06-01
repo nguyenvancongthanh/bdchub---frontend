@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Edit2, Check, Save, FileText, ChevronDown, PlusCircle, Sparkles } from "lucide-react";
+import MarkdownRenderer from "@/components/markdown/MarkdownRenderer";
 import lmsService from "@/services/lmsService";
 import { toast } from "react-hot-toast";
 
@@ -173,9 +172,7 @@ export function ContentDraftPreview({ props }: ContentDraftPreviewProps) {
             className="w-full h-[300px] p-4 text-sm font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
           />
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{draft}</ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={draft} />
         )}
       </div>
 

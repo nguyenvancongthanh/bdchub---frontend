@@ -15,7 +15,8 @@ import {
   Eye, 
   AlertCircle,
   HelpCircle,
-  FileText
+  FileText,
+  Edit2
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { labService } from "@/services/labService";
@@ -23,6 +24,8 @@ import type { Lab, LabLevel, LabType } from "@/types";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
+import MarkdownRenderer from "@/components/markdown/MarkdownRenderer";
+
 
 export default function LabEditPage() {
   const { user, isAdmin, isManager } = useAuth();
@@ -70,6 +73,12 @@ export default function LabEditPage() {
     expected: "",
     explanation: ""
   });
+
+  // Editing States
+  const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
+  const [editingSectionTitle, setEditingSectionTitle] = useState("");
+  const [editingContentId, setEditingContentId] = useState<number | null>(null);
+  const [editingTestCaseId, setEditingTestCaseId] = useState<number | null>(null);
 
   const fetchLabDetails = async () => {
     try {
@@ -206,8 +215,21 @@ export default function LabEditPage() {
     }
   };
 
-  // Section Content creation
-  const handleAddContent = async (secId: number) => {
+  const handleUpdateSectionTitle = async (secId: number) => {
+    if (!editingSectionTitle.trim()) return;
+    try {
+      await labService.updateSection(secId, { title: editingSectionTitle });
+      toast.success("Section updated successfully!");
+      setEditingSectionId(null);
+      fetchSectionsAndContent();
+    } catch (err) {
+      toast.error("Failed to update section.");
+    }
+  };
+
+
+  // Section Content creation / update
+  const handleSaveContent = async (secId: number) => {
     const form = contentForms[secId];
     if (!form || !form.title.trim()) {
       toast.error("Please provide a step title.");
@@ -215,44 +237,79 @@ export default function LabEditPage() {
     }
 
     try {
-      await labService.createContent(secId, {
-        type: form.type,
-        title: form.title,
-        description: form.description,
-        orderIndex: (sections.find(s => s.id === secId)?.content?.length || 0) + 1,
-        isMandatory: true,
-        metadata: {}
-      });
+      if (editingContentId) {
+        await labService.updateContent(editingContentId, {
+          title: form.title,
+          description: form.description
+        });
+        toast.success("Step instruction updated successfully!");
+      } else {
+        await labService.createContent(secId, {
+          type: form.type,
+          title: form.title,
+          description: form.description,
+          orderIndex: sections.find(s => s.id === secId)?.content?.length || 0,
+          isMandatory: true,
+          metadata: {}
+        });
+        toast.success("Step instruction added successfully!");
+      }
 
-      toast.success("Content instruction added!");
       // Reset form
       setContentForms(prev => ({
         ...prev,
         [secId]: { title: "", description: "", type: "TEXT" }
       }));
       setAddingContentMap(prev => ({ ...prev, [secId]: false }));
+      setEditingContentId(null);
       fetchSectionsAndContent();
     } catch (err) {
-      toast.error("Failed to add step instruction.");
+      toast.error("Failed to save step instruction.");
     }
   };
 
-  // Test Case creation
-  const handleAddTestCase = async (e: React.FormEvent) => {
+  const handleDeleteContent = async (itemId: number) => {
+    if (!confirm("Are you sure you want to delete this step instruction?")) return;
+    try {
+      await labService.deleteContent(itemId);
+      toast.success("Step instruction deleted!");
+      fetchSectionsAndContent();
+    } catch (err) {
+      toast.error("Failed to delete step instruction.");
+    }
+  };
+
+
+  // Test Case creation / update
+  const handleSaveTestCase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTestCase.name.trim()) return;
     try {
       setAddingTestCase(true);
-      await labService.createTestCase(labId, {
-        name: newTestCase.name,
-        weight: newTestCase.weight,
-        is_sample: newTestCase.isSample,
-        is_hidden: newTestCase.isHidden,
-        input: newTestCase.input,
-        expected: newTestCase.expected,
-        explanation: newTestCase.explanation
-      });
-      toast.success("Test case added successfully!");
+      if (editingTestCaseId) {
+        await labService.updateTestCase(editingTestCaseId, {
+          name: newTestCase.name,
+          weight: newTestCase.weight,
+          isSample: newTestCase.isSample,
+          isHidden: newTestCase.isHidden,
+          input: newTestCase.input,
+          expected: newTestCase.expected,
+          explanation: newTestCase.explanation
+        });
+        toast.success("Test case updated successfully!");
+      } else {
+        await labService.createTestCase(labId, {
+          name: newTestCase.name,
+          weight: newTestCase.weight,
+          is_sample: newTestCase.isSample,
+          is_hidden: newTestCase.isHidden,
+          input: newTestCase.input,
+          expected: newTestCase.expected,
+          explanation: newTestCase.explanation
+        });
+        toast.success("Test case added successfully!");
+      }
+      setEditingTestCaseId(null);
       setNewTestCase({
         name: "",
         weight: 10,
@@ -264,11 +321,12 @@ export default function LabEditPage() {
       });
       fetchTestCasesList();
     } catch (err) {
-      toast.error("Failed to add test case.");
+      toast.error("Failed to save test case.");
     } finally {
       setAddingTestCase(false);
     }
   };
+
 
   const handleDeleteTestCase = async (id: number) => {
     if (!confirm("Are you sure you want to delete this test case?")) return;
@@ -556,19 +614,57 @@ export default function LabEditPage() {
                     >
                       {/* Section Header */}
                       <div className="bg-slate-50 dark:bg-slate-800/40 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 bg-slate-200 dark:bg-slate-800 text-slate-650 dark:text-slate-350 rounded-lg flex items-center justify-center text-xs font-bold font-mono">
-                            {index + 1}
-                          </span>
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-50">
-                            {sec.title}
-                          </span>
-                        </div>
+                        {editingSectionId === sec.id ? (
+                          <div className="flex items-center gap-3 flex-1 mr-4">
+                            <span className="w-6 h-6 bg-slate-200 dark:bg-slate-800 text-slate-650 dark:text-slate-350 rounded-lg flex items-center justify-center text-xs font-bold font-mono">
+                              {index + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={editingSectionTitle}
+                              onChange={(e) => setEditingSectionTitle(e.target.value)}
+                              className="flex-1 px-3 py-1 text-xs border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-blue-500"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleUpdateSectionTitle(sec.id)}
+                              className="px-2.5 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded shadow transition-all active:scale-95"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingSectionId(null)}
+                              className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 rounded transition-all active:scale-95"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 bg-slate-200 dark:bg-slate-800 text-slate-650 dark:text-slate-350 rounded-lg flex items-center justify-center text-xs font-bold font-mono">
+                              {index + 1}
+                            </span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-slate-50">
+                              {sec.title}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditingSectionId(sec.id);
+                                setEditingSectionTitle(sec.title);
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                              title="Edit Section Name"
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                          </div>
+                        )}
 
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
                               setAddingContentMap(prev => ({ ...prev, [sec.id]: !showAddContent }));
+                              setEditingContentId(null);
                               if (!contentForms[sec.id]) {
                                 setContentForms(prev => ({
                                   ...prev,
@@ -601,7 +697,7 @@ export default function LabEditPage() {
                                 key={item.id}
                                 className="flex items-start justify-between border border-slate-100 dark:border-slate-800 p-4 rounded-xl hover:bg-slate-50/20 dark:hover:bg-slate-800/10 transition-colors"
                               >
-                                <div className="space-y-1">
+                                <div className="space-y-1 flex-1 mr-4">
                                   <div className="flex items-center gap-2">
                                     <FileText size={12} className="text-slate-400" />
                                     <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -611,9 +707,43 @@ export default function LabEditPage() {
                                       {item.type}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400 pl-4.5 max-w-2xl whitespace-pre-wrap leading-relaxed">
-                                    {item.description}
-                                  </p>
+                                  {item.type === "TEXT" ? (
+                                    <div className="pl-4.5 max-w-2xl text-xs mt-1 text-slate-700 dark:text-slate-300">
+                                      <MarkdownRenderer content={item.description || ""} variant="chat" />
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 pl-4.5 max-w-2xl whitespace-pre-wrap leading-relaxed">
+                                      {item.description}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      setEditingContentId(item.id);
+                                      setContentForms(prev => ({
+                                        ...prev,
+                                        [sec.id]: {
+                                          title: item.title,
+                                          description: item.description || "",
+                                          type: item.type
+                                        }
+                                      }));
+                                      setAddingContentMap(prev => ({ ...prev, [sec.id]: true }));
+                                    }}
+                                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-400 dark:hover:text-blue-400 dark:hover:bg-blue-950/40 rounded-lg transition-all active:scale-90"
+                                    title="Edit Step"
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteContent(item.id)}
+                                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all active:scale-90"
+                                    title="Delete Step"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -646,7 +776,8 @@ export default function LabEditPage() {
                                     ...prev,
                                     [sec.id]: { ...form, type: e.target.value }
                                   }))}
-                                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-xs outline-none cursor-pointer"
+                                  disabled={!!editingContentId}
+                                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-xs outline-none cursor-pointer disabled:opacity-60"
                                 >
                                   <option value="TEXT">Markdown Slide Text</option>
                                   <option value="CODE_TEMPLATE">Starting Code Template</option>
@@ -670,16 +801,23 @@ export default function LabEditPage() {
 
                             <div className="flex items-center justify-end gap-2 text-xs">
                               <button
-                                onClick={() => setAddingContentMap(prev => ({ ...prev, [sec.id]: false }))}
+                                onClick={() => {
+                                  setAddingContentMap(prev => ({ ...prev, [sec.id]: false }));
+                                  setEditingContentId(null);
+                                  setContentForms(prev => ({
+                                    ...prev,
+                                    [sec.id]: { title: "", description: "", type: "TEXT" }
+                                  }));
+                                }}
                                 className="px-3 py-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                               >
                                 Cancel
                               </button>
                               <button
-                                onClick={() => handleAddContent(sec.id)}
+                                onClick={() => handleSaveContent(sec.id)}
                                 className="px-3.5 py-1.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg active:scale-95 transition-all shadow"
                               >
-                                Save Step
+                                {editingContentId ? "Update Step" : "Save Step"}
                               </button>
                             </div>
                           </div>
@@ -700,11 +838,11 @@ export default function LabEditPage() {
             {/* Create Test Case Form */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 mb-4 flex items-center gap-2">
-                <PlusCircle className="text-blue-500 w-4 h-4" />
-                Add Grading Test Case
+                {editingTestCaseId ? <Edit2 className="text-blue-500 w-4 h-4" /> : <PlusCircle className="text-blue-500 w-4 h-4" />}
+                {editingTestCaseId ? "Edit Grading Test Case" : "Add Grading Test Case"}
               </h3>
               
-              <form onSubmit={handleAddTestCase} className="space-y-4">
+              <form onSubmit={handleSaveTestCase} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-500">Test Case Name</label>
@@ -789,14 +927,34 @@ export default function LabEditPage() {
                   />
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end items-center gap-2 pt-2">
+                  {editingTestCaseId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTestCaseId(null);
+                        setNewTestCase({
+                          name: "",
+                          weight: 10,
+                          isSample: false,
+                          isHidden: true,
+                          input: "",
+                          expected: "",
+                          explanation: ""
+                        });
+                      }}
+                      className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
                   <button
                     type="submit"
                     disabled={addingTestCase}
                     className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow active:scale-95 transition-all disabled:opacity-50"
                   >
-                    {addingTestCase ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus size={14} />}
-                    Save Test Case
+                    {addingTestCase ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingTestCaseId ? <Save size={14} /> : <Plus size={14} />)}
+                    {editingTestCaseId ? "Update Test Case" : "Save Test Case"}
                   </button>
                 </div>
               </form>
@@ -867,12 +1025,34 @@ export default function LabEditPage() {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => handleDeleteTestCase(tc.id)}
-                              className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all active:scale-90"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingTestCaseId(tc.id);
+                                  setNewTestCase({
+                                    name: tc.name || "",
+                                    weight: tc.weight || 10,
+                                    isSample: tc.is_sample || false,
+                                    isHidden: tc.is_hidden || false,
+                                    input: tc.input || "",
+                                    expected: tc.expected || "",
+                                    explanation: tc.explanation || ""
+                                  });
+                                  document.getElementById("lab-editor-dashboard")?.scrollIntoView({ behavior: "smooth" });
+                                }}
+                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-400 dark:hover:text-blue-400 dark:hover:bg-blue-950/40 rounded-lg transition-all active:scale-90"
+                                title="Edit Test Case"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTestCase(tc.id)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all active:scale-90"
+                                title="Delete Test Case"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

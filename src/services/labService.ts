@@ -87,6 +87,45 @@ const mapContent = (raw: any): any => {
   };
 };
 
+// Helper to map backend snake_case SubmissionResponse to frontend camelCase LabSubmission
+const mapSubmission = (raw: any): any => {
+  if (!raw) return raw;
+  return {
+    id: raw.id,
+    labId: raw.lab_id,
+    userId: raw.user_id,
+    language: raw.language,
+    code: raw.code,
+    status: raw.status,
+    score: raw.score,
+    maxScore: raw.max_score,
+    passedTests: raw.passed_tests,
+    totalTests: raw.total_tests,
+    runtimeMs: raw.runtime_ms,
+    memoryKb: raw.memory_kb,
+    compilerOutput: raw.compiler_output,
+    submittedAt: raw.submitted_at,
+  };
+};
+
+// Helper to map backend snake_case RunResultResponse to frontend camelCase RunResult
+const mapRunResult = (raw: any): any => {
+  if (!raw) return raw;
+  return {
+    compilerOutput: raw.compiler_output,
+    totalRuntimeMs: raw.total_runtime_ms,
+    status: raw.status,
+    testResults: (raw.test_results || []).map((tr: any) => ({
+      testCaseId: tr.test_case_id,
+      status: tr.status,
+      actualOutput: tr.actual_output,
+      runtimeMs: tr.runtime_ms,
+      memoryKb: tr.memory_kb,
+      isSample: tr.is_sample,
+    })),
+  };
+};
+
 export const labService = {
   getPublishedLabs: async (params?: {
     lab_type?: string;
@@ -168,15 +207,27 @@ export const labService = {
   },
 
   runCode: async (labId: number, data: { language: string; code: string }): Promise<SuccessResponse<any>> => {
-    return labApiClient.post<SuccessResponse<any>>(`/labs/${labId}/run`, data);
+    const res = await labApiClient.post<SuccessResponse<any>>(`/labs/${labId}/run`, data);
+    return {
+      ...res,
+      data: mapRunResult(res.data),
+    };
   },
 
   submitCode: async (labId: number, data: { language: string; code: string }): Promise<SuccessResponse<any>> => {
-    return labApiClient.post<SuccessResponse<any>>(`/labs/${labId}/submit`, data);
+    const res = await labApiClient.post<SuccessResponse<any>>(`/labs/${labId}/submit`, data);
+    return {
+      ...res,
+      data: mapSubmission(res.data),
+    };
   },
 
   getMySubmissions: async (labId: number, page = 1, pageSize = 20): Promise<any> => {
-    return labApiClient.get<any>(`/labs/${labId}/submissions/my?page=${page}&page_size=${pageSize}`);
+    const res = await labApiClient.get<any>(`/labs/${labId}/submissions/my?page=${page}&page_size=${pageSize}`);
+    return {
+      ...res,
+      items: (res.items || []).map(mapSubmission),
+    };
   },
 
   // --- ADMIN/TEACHER CRUD OPERATIONS ---
@@ -291,12 +342,51 @@ export const labService = {
     });
   },
 
+  updateContent: async (
+    contentId: number,
+    data: {
+      title?: string;
+      description?: string;
+      orderIndex?: number;
+      isMandatory?: boolean;
+      metadata?: any;
+    }
+  ): Promise<SuccessResponse<any>> => {
+    return labApiClient.put<SuccessResponse<any>>(`/content/${contentId}`, {
+      title: data.title,
+      description: data.description,
+      order_index: data.orderIndex,
+      is_mandatory: data.isMandatory,
+      metadata: data.metadata
+    });
+  },
+
+  deleteContent: async (contentId: number): Promise<void> => {
+    return labApiClient.delete(`/content/${contentId}`);
+  },
+
   getTestCases: async (labId: number): Promise<SuccessResponse<any[]>> => {
     return labApiClient.get<SuccessResponse<any[]>>(`/labs/${labId}/test-cases`);
   },
 
   createTestCase: async (labId: number, data: any): Promise<SuccessResponse<any>> => {
     return labApiClient.post<SuccessResponse<any>>(`/labs/${labId}/test-cases`, data);
+  },
+
+  updateTestCase: async (id: number, data: any): Promise<SuccessResponse<any>> => {
+    const payload = {
+      name: data.name,
+      order_index: data.orderIndex,
+      is_sample: data.isSample,
+      is_hidden: data.isHidden,
+      weight: data.weight,
+      input: data.input,
+      expected: data.expected,
+      time_limit_ms: data.timeLimitMs,
+      memory_limit_mb: data.memoryLimitMB,
+      explanation: data.explanation
+    };
+    return labApiClient.put<SuccessResponse<any>>(`/test-cases/${id}`, payload);
   },
 
   deleteTestCase: async (id: number): Promise<void> => {
@@ -309,3 +399,4 @@ export const labService = {
     });
   },
 };
+

@@ -117,10 +117,19 @@ export default function MarkdownRenderer({
           // the `inline` prop from `code`; `pre` only wraps fenced blocks, never
           // inline code, so this is the correct v10 detection pattern).
           pre: ({ children }: any) => {
-            // Extract the inner <code> element rendered by react-markdown
-            const codeEl = React.Children.toArray(children).find(
-              (child: any) => child?.type === 'code' || child?.props?.className?.startsWith('language-')
-            ) as React.ReactElement<any> | undefined;
+            // Extract the inner <code> element rendered by react-markdown.
+            // Check for explicit 'code' types, class patterns, or fallback to the first child.
+            const childrenArray = React.Children.toArray(children);
+            const codeEl = childrenArray.find(
+              (child: any) => 
+                child && typeof child === 'object' && (
+                  child.type === 'code' ||
+                  child.props?.className?.startsWith('language-') ||
+                  (typeof child.type === 'function' && child.type.name === 'code') ||
+                  (child.props && 'children' in child.props)
+                )
+            ) as React.ReactElement<any> | undefined 
+            || (childrenArray[0] as React.ReactElement<any> | undefined);
 
             const className = codeEl?.props?.className ?? '';
             const match = /language-(\w+)/.exec(className);
@@ -138,8 +147,12 @@ export default function MarkdownRenderer({
                   style={vscDarkPlus}
                   language={lang || 'text'}
                   PreTag="div"
+                  customStyle={{
+                    color: '#e2e8f0', // Tailwind text-slate-200
+                    backgroundColor: '#030712' // Tailwind bg-gray-950
+                  }}
                   className={cn(
-                    "rounded-xl overflow-hidden !bg-gray-950 !m-0 shadow-lg font-mono",
+                    "rounded-xl overflow-hidden !m-0 shadow-lg font-mono text-slate-200",
                     isChat ? "!p-3 text-[11px] leading-normal" : "!p-4 text-sm"
                   )}
                 >
