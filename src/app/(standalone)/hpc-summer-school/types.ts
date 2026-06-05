@@ -4,6 +4,7 @@ import hcmutLogo from "@/assets/hcmut.png";
 import hpccLogo from "@/assets/hpcc-logo.png";
 import cseLogo from "@/assets/CSE_logo.png";
 import bdcLogo from "@/assets/bdclogo.png";
+import agentiviumLogo from "@/assets/Agentivium-logo-vertical-dark.png";
 import doanLogo from "@/assets/logo-Doan.png";
 import hoiLogo from "@/assets/logo-Hoi.png";
 
@@ -47,6 +48,7 @@ export const ORGANIZERS: Organizer[] = [
   { src: hpccLogo, alt: "HPCC", cls: "w-16 h-9" },
   { src: cseLogo, alt: "CSE", cls: "w-6 h-6" },
   { src: bdcLogo, alt: "Big Data Club", cls: "w-6 h-6" },
+  { src: agentiviumLogo, alt: "Agentivium", cls: "w-8 h-6" },
   { src: doanLogo, alt: "Youth Union", cls: "w-6 h-6" },
   { src: hoiLogo, alt: "Student Association", cls: "w-6 h-6" },
 ];
