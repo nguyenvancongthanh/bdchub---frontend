@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Bot, User, Wrench, Check, AlertCircle, ChevronDown, ChevronRight, BookOpen, Globe } from "lucide-react";
+import { Bot, User, Wrench, Check, AlertCircle, ChevronDown, ChevronRight, BookOpen, Globe, Cpu } from "lucide-react";
 import type { AgentMessage } from "@/types";
 import { AgentThinkingIndicator } from "./AgentThinkingIndicator";
 import { ClarificationCard } from "./ClarificationCard";
@@ -12,11 +12,15 @@ import MarkdownRenderer from "@/components/markdown/MarkdownRenderer";
 interface AgentMessageBubbleProps {
   message: AgentMessage;
   onClarificationSelect?: (option: string) => void;
+  isSelectedForLogs?: boolean;
+  onSelectForLogs?: () => void;
 }
 
 export function AgentMessageBubble({
   message,
   onClarificationSelect,
+  isSelectedForLogs = false,
+  onSelectForLogs,
 }: AgentMessageBubbleProps) {
   const isUser = message.role === "user";
   const [showThinking, setShowThinking] = useState(false);
@@ -120,10 +124,15 @@ export function AgentMessageBubble({
         {message.content && (
           <div
             className={cn(
-              "px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm",
+              "px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm transition-all duration-250",
               isUser
                 ? "bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-br-sm shadow-blue-500/5 whitespace-pre-wrap break-words"
-                : "bg-slate-50/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 text-slate-800 dark:text-slate-200 rounded-bl-sm backdrop-blur-sm",
+                : cn(
+                    "bg-slate-50/70 dark:bg-slate-900/70 border text-slate-800 dark:text-slate-200 rounded-bl-sm backdrop-blur-sm",
+                    isSelectedForLogs
+                      ? "border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20 shadow-md"
+                      : "border-slate-200/50 dark:border-slate-800/50"
+                  )
             )}
           >
             {isUser ? (
@@ -193,6 +202,25 @@ export function AgentMessageBubble({
           </div>
         )}
 
+        {/* Telemetry Select Button */}
+        {!isUser && onSelectForLogs && (message.spawningScore !== undefined || (message.multiAgentLogs && message.multiAgentLogs.length > 0)) && (
+          <div className="flex justify-start pt-1">
+            <button
+              onClick={onSelectForLogs}
+              className={cn(
+                "flex items-center gap-1 py-0.5 px-2 rounded-lg text-[10px] font-semibold transition-all duration-200 border active:scale-95",
+                isSelectedForLogs
+                  ? "bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-900 text-blue-600 dark:text-blue-400"
+                  : "bg-transparent border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              )}
+              title="Xem vết xử lý Multi-Agent của tin nhắn này"
+            >
+              <Cpu className="w-3 h-3" />
+              <span>{isSelectedForLogs ? "Đang xem Log Console" : "Xem Log Multi-Agent"}</span>
+            </button>
+          </div>
+        )}
+
         {/* Clarification options */}
         {message.clarification &&
           message.clarification.options.length > 0 &&
@@ -228,3 +256,4 @@ export function AgentMessageBubble({
     </div>
   );
 }
+

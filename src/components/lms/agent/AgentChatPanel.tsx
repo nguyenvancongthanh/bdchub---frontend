@@ -8,7 +8,7 @@
  */
 import { useRef, useEffect, useCallback, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { MessageSquare, Sparkles, Loader2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { MessageSquare, Sparkles, Loader2, PanelLeftClose, PanelLeftOpen, Cpu } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useAgentChat } from "@/hooks/useAgentChat";
@@ -18,6 +18,7 @@ import {
   ConversationSidebar,
   type ConversationSidebarHandle,
 } from "./ConversationSidebar";
+import { AgentConsoleSidebar } from "./AgentConsoleSidebar";
 
 interface AgentChatPanelProps {
   agentType: "teacher" | "mentor";
@@ -65,6 +66,8 @@ export function AgentChatPanel({
   const sidebarRef = useRef<ConversationSidebarHandle>(null);
  
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
 
   const handleSessionUpdated = useCallback(
     (update: { sessionId: string; title?: string; reason: string }) => {
@@ -98,6 +101,17 @@ export function AgentChatPanel({
     userId,
     onSessionUpdated: handleSessionUpdated,
   });
+
+  const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant") || null;
+
+  // Reset selected message log when session ID changes
+  useEffect(() => {
+    setSelectedMessageId(null);
+  }, [sessionId]);
+
+  const activeLogMessage = selectedMessageId
+    ? (messages.find((m) => m.id === selectedMessageId) || null)
+    : lastAssistantMsg;
 
   // Sync state sessionId back to URL query parameters
   useEffect(() => {
@@ -168,9 +182,10 @@ export function AgentChatPanel({
               onDeleteSession={deleteSession}
               onCloseMobile={() => setSidebarOpen(false)}
               className={cn(
-                "fixed inset-y-0 left-0 z-50 w-[260px] transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-0 lg:border-r",
-                sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-                "lg:w-1/5 lg:min-w-[220px] lg:max-w-[260px]"
+                "fixed inset-y-0 left-0 z-50 w-[260px] transition-all duration-300 ease-in-out lg:relative lg:z-0 lg:border-r",
+                sidebarOpen 
+                  ? "translate-x-0 lg:w-1/5 lg:min-w-[220px] lg:max-w-[260px] lg:opacity-100" 
+                  : "-translate-x-full lg:w-0 lg:opacity-0 lg:pointer-events-none lg:border-none",
               )}
           />
       )}
@@ -206,6 +221,20 @@ export function AgentChatPanel({
             Powered by AI
           </p>
         </div>
+
+        <button
+          onClick={() => setConsoleOpen(!consoleOpen)}
+          className={cn(
+            "ml-auto p-1.5 rounded-lg border transition-all duration-200 active:scale-95 flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold",
+            consoleOpen
+              ? "text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900"
+              : "text-slate-600 border-slate-200 dark:text-slate-400 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+          )}
+          title={consoleOpen ? "Ẩn Console" : "Hiện Console Debugger"}
+        >
+          <Cpu className="w-4 h-4" />
+          <span className="hidden sm:inline">Console</span>
+        </button>
       </div>
 
       {/* Messages area */}
@@ -258,6 +287,11 @@ export function AgentChatPanel({
                   key={msg.id}
                   message={msg}
                   onClarificationSelect={(option) => sendMessage(option)}
+                  isSelectedForLogs={activeLogMessage?.id === msg.id}
+                  onSelectForLogs={() => {
+                    setSelectedMessageId(msg.id);
+                    setConsoleOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -289,6 +323,13 @@ export function AgentChatPanel({
         </div>
       </div>
       </div>
+      
+      {/* Right Sidebar Console */}
+      <AgentConsoleSidebar
+        isOpen={consoleOpen}
+        onClose={() => setConsoleOpen(false)}
+        activeMessage={activeLogMessage}
+      />
     </div>
   );
 }

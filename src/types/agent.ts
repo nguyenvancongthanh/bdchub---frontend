@@ -18,6 +18,12 @@ export type AgentEventType =
   | "hitl_request"
   | "session"
   | "title_update"
+  | "subagent_spawn"
+  | "subagent_thinking"
+  | "subagent_done"
+  | "subagent_error"
+  | "critique_phase"
+  | "context_consolidation"
   | "done"
   | "error";
 
@@ -26,6 +32,32 @@ export interface AgentEvent {
   data: Record<string, any>;
   session_id: string;
   turn_id?: string;
+}
+
+// ── Multi-Agent Logging Types ───────────────────────────────────────────────
+
+export interface SubAgentLog {
+  subagentId: string;
+  role: string;
+  task: string;
+  status: "running" | "completed" | "failed";
+  thinking: string;
+  summary?: string;
+  error?: string;
+}
+
+export interface CritiqueReportData {
+  factuality_score: number;
+  pedagogy_score: number;
+  format_score: number;
+  verdict: "approve" | "needs_revision";
+  critique_report: string;
+}
+
+export interface ConsolidationData {
+  raw_tokens: number;
+  consolidated_tokens: number;
+  compression_ratio: number;
 }
 
 // ── Chat Messages ───────────────────────────────────────────────────────────
@@ -91,6 +123,13 @@ export interface AgentMessage {
 
   /** Cumulative references retrieved during this turn. */
   references?: AIReference[];
+
+  /** Multi-Agent execution steps & metrics */
+  multiAgentLogs?: SubAgentLog[];
+  critiqueReport?: CritiqueReportData;
+  consolidation?: ConsolidationData;
+  spawningScore?: number;
+  spawningBreakdown?: Record<string, any>;
 }
 
 // ── Request / Response ──────────────────────────────────────────────────────
