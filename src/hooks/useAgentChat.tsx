@@ -70,6 +70,11 @@ export function useAgentChat({ agentType, courseId, initialSessionId, userId, pa
         hitlRequest: m.metadata?.hitlRequest,
         thinking: m.metadata?.thinking || "",
         references: m.metadata?.references || [],
+        multiAgentLogs: (m.metadata as any)?.multiAgentLogs || [],
+        critiqueReport: (m.metadata as any)?.critiqueReport,
+        consolidation: (m.metadata as any)?.consolidation,
+        spawningScore: (m.metadata as any)?.spawningScore,
+        spawningBreakdown: (m.metadata as any)?.spawningBreakdown,
       }));
       setMessages(mappedMessages);
     } catch (err) {
@@ -274,18 +279,115 @@ export function useAgentChat({ agentType, courseId, initialSessionId, userId, pa
         setIsThinking(true);
         updateAssistant(assistantId, (msg) => {
           const delta = event.data.delta || "";
+          const step = event.data.step;
+          let extra: Partial<AgentMessage> = {};
+          if (step === "multi_agent_decision") {
+            extra = {
+              spawningScore: event.data.score,
+              spawningBreakdown: event.data.breakdown,
+            };
+          }
           return {
             ...msg,
+            ...extra,
             thinking: (msg.thinking || "") + delta,
             thinkingSteps: [
               ...(msg.thinkingSteps || []),
               {
                 step: event.data.step || "thinking",
-                detail: event.data.intent || event.data.token_estimate?.toString(),
+                detail: event.data.intent || event.data.token_estimate?.toString() || event.data.detail,
               },
             ],
           };
         });
+        break;
+
+      case "subagent_spawn":
+        updateAssistant(assistantId, (msg) => {
+          const logs = msg.multiAgentLogs || [];
+          if (logs.some((l) => l.subagentId === event.data.subagent_id)) {
+            return msg;
+          }
+          return {
+            ...msg,
+            multiAgentLogs: [
+              ...logs,
+              {
+                subagentId: event.data.subagent_id,
+                role: event.data.role,
+                task: event.data.task,
+                status: "running",
+                thinking: "",
+              },
+            ],
+          };
+        });
+        break;
+
+      case "subagent_thinking":
+        updateAssistant(assistantId, (msg) => {
+          const logs = msg.multiAgentLogs || [];
+          return {
+            ...msg,
+            multiAgentLogs: logs.map((l) =>
+              l.subagentId === event.data.subagent_id
+                ? { ...l, thinking: l.thinking + (event.data.delta || "") }
+                : l
+            ),
+          };
+        });
+        break;
+
+      case "subagent_done":
+        updateAssistant(assistantId, (msg) => {
+          const logs = msg.multiAgentLogs || [];
+          return {
+            ...msg,
+            multiAgentLogs: logs.map((l) =>
+              l.subagentId === event.data.subagent_id
+                ? { ...l, status: "completed", summary: event.data.summary }
+                : l
+            ),
+          };
+        });
+        break;
+
+      case "subagent_error":
+        updateAssistant(assistantId, (msg) => {
+          const logs = msg.multiAgentLogs || [];
+          return {
+            ...msg,
+            multiAgentLogs: logs.map((l) =>
+              l.subagentId === event.data.subagent_id
+                ? { ...l, status: "failed", error: event.data.error }
+                : l
+            ),
+          };
+        });
+        break;
+
+      case "critique_phase":
+        updateAssistant(assistantId, (msg) => ({
+          ...msg,
+          critiqueReport: {
+            factuality_score: event.data.factuality_score,
+            pedagogy_score: event.data.pedagogy_score,
+            format_score: event.data.format_score,
+            verdict: event.data.verdict,
+            critique_report: event.data.critique_report,
+          },
+        }));
+        break;
+
+      case "context_consolidation":
+        updateAssistant(assistantId, (msg) => ({
+          ...msg,
+          consolidation: {
+            raw_tokens: event.data.raw_tokens,
+            consolidated_tokens: event.data.consolidated_tokens,
+            compression_ratio: event.data.compression_ratio,
+          },
+        }));
         break;
 
       case "text_delta":
