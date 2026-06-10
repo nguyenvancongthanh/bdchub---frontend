@@ -78,6 +78,10 @@ const MobileNav = () => {
               .map((section) => {
                 const filteredLinks = section.links.filter((link) => {
                   if (isAdmin) return true;
+                  if (link.label === "Hướng dẫn Học viên") return true;
+                  if (link.label === "Hướng dẫn Giảng viên") {
+                    return user?.role === "ROLE_TEACHER" || user?.role === "ROLE_MANAGER";
+                  }
                   return (
                     link.label === "Shared Knowledge" ||
                     link.label === "Virtual Lab" ||

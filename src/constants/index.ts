@@ -7,6 +7,7 @@ import {
   Dot,
   FlaskConical,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import bdclogo from "@/assets/bdclogo.png";
 
@@ -41,6 +42,13 @@ export const sidebarSections = [
     links: [
       { label: "Data Hackathon", route: "/hackathon2025", icon: Dot, iconColor: "text-blue-500" },
       { label: "HCMUT HPC School", route: "https://hpcc.hcmut.edu.vn/hpc-school", icon: GraduationCap, iconColor: "text-blue-500" },
+    ],
+  },
+  {
+    title: "Hướng dẫn sử dụng",
+    links: [
+      { label: "Hướng dẫn Học viên", route: "/guide/student", icon: BookOpen, iconColor: "text-blue-500" },
+      { label: "Hướng dẫn Giảng viên", route: "/guide/instructor", icon: GraduationCap, iconColor: "text-blue-500" },
     ],
   },
 ];
