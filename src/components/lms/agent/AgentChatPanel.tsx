@@ -12,6 +12,7 @@ import { MessageSquare, Sparkles, Loader2, PanelLeftClose, PanelLeftOpen, Cpu } 
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useAgentChat } from "@/hooks/useAgentChat";
+import { usePageContext } from "@/hooks/usePageContext";
 import { AgentMessageBubble } from "./AgentMessageBubble";
 import { AgentInputBar } from "./AgentInputBar";
 import {
@@ -84,6 +85,8 @@ export function AgentChatPanel({
     [],
   );
 
+  const pageContext = usePageContext();
+
   const {
     messages,
     sessionId,
@@ -96,9 +99,10 @@ export function AgentChatPanel({
     deleteSession,
   } = useAgentChat({
     agentType,
-    courseId,
+    courseId: courseId || (pageContext?.courseId ? Number(pageContext.courseId) : undefined),
     initialSessionId: propSessionId,
     userId,
+    pageContext: pageContext || undefined,
     onSessionUpdated: handleSessionUpdated,
   });
 

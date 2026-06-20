@@ -5,6 +5,8 @@ import { useEffect, ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { UserProvider, useUser } from "@/store/UserContext";
+import { PageContextProvider } from "@/hooks/usePageContext";
+import { CoworkerLayout } from "@/components/layout/CoworkerLayout";
 
 function SessionMonitor() {
   const { data: session, status } = useSession();
@@ -27,7 +29,7 @@ function SessionMonitor() {
       }
     } else if (status === "unauthenticated") {
        if (user) setUser(null);
-    }
+     }
   }, [session, status, user, setUser]);
 
   return null;
@@ -44,7 +46,11 @@ export default function Providers({ children }: { children: ReactNode }) {
           enableSystem={false}
           storageKey="bdc-theme"
         >
-          {children}
+          <PageContextProvider>
+            <CoworkerLayout>
+              {children}
+            </CoworkerLayout>
+          </PageContextProvider>
           <Toaster />
         </ThemeProvider>
       </SessionProvider>
