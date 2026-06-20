@@ -11,8 +11,10 @@
  * when a content item is selected.
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import lmsService from "@/services/lmsService";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft, ChevronRight, BookOpen, BarChart3,
@@ -89,7 +91,24 @@ export default function LearnPage() {
     activeContent, setActiveContent,
     completedIds, handleMarkComplete, markingComplete,
     toggleSection,
+    coTeachers,
   } = useStudentCourse();
+
+  const { data: session } = useSession();
+  const userId = session?.user ? Number((session.user as any).id || (session.user as any).userId) : undefined;
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+
+  useEffect(() => {
+    lmsService.getMyRoles().then(roles => setUserRoles(roles || [])).catch(() => {});
+  }, []);
+
+  const isCourseTeacher = useMemo(() => {
+    if (!userId || !course) return false;
+    const isCreator = course.created_by === userId;
+    const isCo = coTeachers?.some((ct: any) => ct.user_id === userId);
+    const isAdmin = userRoles.includes("ADMIN");
+    return isCreator || isCo || isAdmin;
+  }, [userId, course, coTeachers, userRoles]);
 
   // Timer ref for auto-complete
   const autoCompleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,7 +206,7 @@ export default function LearnPage() {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs">
         <ContentViewer
           content={activeContent}
-          userRole="STUDENT"
+          userRole={isCourseTeacher ? "TEACHER" : "STUDENT"}
           isCompleted={completedIds.has(activeContent.id)}
           courseId={courseId}
           onComplete={() => handleMarkComplete(activeContent.id)}

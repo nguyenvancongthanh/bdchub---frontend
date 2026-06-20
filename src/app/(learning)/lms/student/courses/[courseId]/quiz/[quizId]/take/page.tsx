@@ -77,9 +77,27 @@ export default function StudentQuizTakingPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [activeSaveRequests, setActiveSaveRequests] = useState(0);
+  const activeSaveRequestsRef = useRef(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [courseTitle, setCourseTitle] = useState("");
   const [showImageModal, setShowImageModal] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [fetchingServerAnswers, setFetchingServerAnswers] = useState(false);
+  const [serverAnswers, setServerAnswers] = useState<{ [key: number]: any }>({});
+
+  const updateActiveSaveRequests = (val: number | ((prev: number) => number)) => {
+    if (typeof val === "function") {
+      setActiveSaveRequests((prev) => {
+        const next = val(prev);
+        activeSaveRequestsRef.current = next;
+        return next;
+      });
+    } else {
+      setActiveSaveRequests(val);
+      activeSaveRequestsRef.current = val;
+    }
+  };
 
   useEffect(() => {
     startQuiz();
@@ -218,6 +236,7 @@ export default function StudentQuizTakingPage() {
 
     // Auto-save answer to backend
     if (attempt) {
+      updateActiveSaveRequests(prev => prev + 1);
       try {
         await quizService.submitAnswer(attempt.id, {
           attempt_id: attempt.id,
@@ -226,6 +245,8 @@ export default function StudentQuizTakingPage() {
         });
       } catch (error) {
         console.error("Error saving answer:", error);
+      } finally {
+        updateActiveSaveRequests(prev => Math.max(0, prev - 1));
       }
     }
   };
@@ -233,11 +254,24 @@ export default function StudentQuizTakingPage() {
   const handleAutoSubmit = async () => {
     if (submitting) return;
     alert("Hết giờ! Quiz sẽ được tự động nộp.");
-    await handleSubmit();
+    await handleSubmit(true);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isAutoSubmit = false) => {
     if (!attempt) return;
+
+    if (activeSaveRequestsRef.current > 0) {
+      if (!isAutoSubmit) {
+        alert("Hệ thống đang lưu các câu trả lời cuối cùng của bạn. Vui lòng đợi trong giây lát rồi thử lại.");
+        return;
+      }
+      // For auto-submit, wait up to 3 seconds for active requests to drain
+      let retries = 30; // 30 * 100ms = 3s
+      while (activeSaveRequestsRef.current > 0 && retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries--;
+      }
+    }
 
     // Check required questions
     const unansweredRequired = questions.filter((q) => {
@@ -274,6 +308,257 @@ export default function StudentQuizTakingPage() {
       alert(error.response?.data?.message || "Không thể nộp bài");
       setSubmitting(false);
     }
+  };
+
+  const isQuestionAnsweredInServer = (question: Question, svAnswers: { [key: number]: any }) => {
+    const answer = svAnswers[question.id];
+    if (!answer) return false;
+    
+    if (question.question_type === "FILE_UPLOAD") {
+      return !!answer.file_name;
+    }
+    
+    if (question.question_type === "FILL_BLANK_TEXT" || question.question_type === "FILL_BLANK_DROPDOWN") {
+      return answer.blanks && answer.blanks.length > 0 && answer.blanks.some((b: any) => b !== null && b !== undefined && b !== "");
+    }
+    
+    if (question.question_type === "MULTIPLE_CHOICE") {
+      return answer.selected_option_ids && answer.selected_option_ids.length > 0;
+    }
+
+    if (question.question_type === "SINGLE_CHOICE") {
+      return answer.selected_option_id !== undefined && answer.selected_option_id !== null;
+    }
+
+    if (question.question_type === "SHORT_ANSWER" || question.question_type === "ESSAY") {
+      return answer.answer_text !== undefined && answer.answer_text !== null && answer.answer_text.trim() !== "";
+    }
+    
+    return true;
+  };
+
+  const getRecordedAnswerText = (question: Question, svAnswers: { [key: number]: any }) => {
+    const answer = svAnswers[question.id];
+    if (!answer) return "Chưa trả lời";
+
+    if (question.question_type === "SINGLE_CHOICE") {
+      const selectedId = answer.selected_option_id;
+      const option = question.answer_options?.find(opt => opt.id === selectedId);
+      return option ? `Đã chọn: ${option.option_text}` : "Chưa chọn";
+    }
+
+    if (question.question_type === "MULTIPLE_CHOICE") {
+      const selectedIds: number[] = answer.selected_option_ids || [];
+      if (selectedIds.length === 0) return "Chưa chọn";
+      const optionTexts = selectedIds
+        .map(id => question.answer_options?.find(opt => opt.id === id)?.option_text)
+        .filter(Boolean);
+      return `Đã chọn: ${optionTexts.join(", ")}`;
+    }
+
+    if (question.question_type === "SHORT_ANSWER" || question.question_type === "ESSAY") {
+      return answer.answer_text ? `Đã nhập: "${answer.answer_text}"` : "Chưa nhập";
+    }
+
+    if (question.question_type === "FILL_BLANK_TEXT" || question.question_type === "FILL_BLANK_DROPDOWN") {
+      const blanks: string[] = answer.blanks || [];
+      if (blanks.length === 0) return "Chưa điền";
+      return `Đã điền: ${blanks.map((b, i) => `[Ô ${i+1}]: ${b || "trống"}`).join(" | ")}`;
+    }
+
+    if (question.question_type === "FILE_UPLOAD") {
+      return answer.file_name ? `Đã tải lên: ${answer.file_name}` : "Chưa tải tệp";
+    }
+
+    return "Đã ghi nhận";
+  };
+
+  const handleOpenReviewModal = async () => {
+    if (activeSaveRequestsRef.current > 0) {
+      alert("Hệ thống đang lưu các câu trả lời cuối cùng của bạn. Vui lòng đợi trong giây lát rồi thử lại.");
+      return;
+    }
+    
+    setShowReviewModal(true);
+    setFetchingServerAnswers(true);
+    
+    try {
+      if (attempt) {
+        const response = await quizService.getAttemptAnswers(attempt.id);
+        const serverAnswersMap: { [key: number]: any } = {};
+        response.data?.forEach((answer: any) => {
+          serverAnswersMap[answer.question_id] = answer.answer_data;
+        });
+        setServerAnswers(serverAnswersMap);
+      }
+    } catch (error) {
+      console.error("Error fetching server answers:", error);
+      setServerAnswers(answers);
+    } finally {
+      setFetchingServerAnswers(false);
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!attempt) return;
+    try {
+      setSubmitting(true);
+      await quizService.submitQuiz(attempt.id);
+      alert("Đã nộp bài thành công!");
+      setShowReviewModal(false);
+      router.push(`/lms/student/courses/${courseId}/quiz/${quizId}/result/${attempt.id}`);
+    } catch (error: any) {
+      console.error("Error submitting quiz:", error);
+      alert(error.response?.data?.message || "Không thể nộp bài");
+      setSubmitting(false);
+    }
+  };
+
+  const renderReviewModal = () => {
+    if (!showReviewModal) return null;
+
+    const answeredCount = questions.filter(q => isQuestionAnsweredInServer(q, serverAnswers)).length;
+    const unansweredCount = questions.length - answeredCount;
+
+    const unansweredRequired = questions.filter(q => q.is_required && !isQuestionAnsweredInServer(q, serverAnswers));
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all duration-300">
+        <div 
+          className="relative max-w-3xl w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+              📝 Xác nhận nộp bài (Quiz Review)
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              Vui lòng xem lại danh sách câu trả lời hệ thống đã ghi nhận trên server bên dưới.
+            </p>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {fetchingServerAnswers ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">Đang tải đáp án từ máy chủ...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-xl text-center">
+                    <span className="block text-2xl font-extrabold text-blue-700 dark:text-blue-400">{questions.length}</span>
+                    <span className="text-xs text-blue-600/80 dark:text-blue-400/80 font-semibold uppercase tracking-wider">Tổng số câu</span>
+                  </div>
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 rounded-xl text-center">
+                    <span className="block text-2xl font-extrabold text-green-700 dark:text-green-400">{answeredCount}</span>
+                    <span className="text-xs text-green-600/80 dark:text-green-400/80 font-semibold uppercase tracking-wider">Đã ghi nhận</span>
+                  </div>
+                  <div className={`p-4 border rounded-xl text-center ${
+                    unansweredCount > 0 
+                      ? "bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/50" 
+                      : "bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800"
+                  }`}>
+                    <span className={`block text-2xl font-extrabold ${unansweredCount > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>{unansweredCount}</span>
+                    <span className="text-xs text-slate-500/80 dark:text-slate-400/80 font-semibold uppercase tracking-wider">Chưa hoàn tất</span>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/20">
+                  {questions.map((q, idx) => {
+                    const isAnswered = isQuestionAnsweredInServer(q, serverAnswers);
+                    const ansText = getRecordedAnswerText(q, serverAnswers);
+                    return (
+                      <div 
+                        key={q.id} 
+                        className={`p-4 flex items-start justify-between gap-4 hover:bg-slate-100/30 dark:hover:bg-slate-800/20 transition-colors ${
+                          q.is_required && !isAnswered ? "bg-red-500/5" : ""
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              Câu {idx + 1}
+                            </span>
+                            {q.is_required && (
+                              <span className="text-xs font-semibold text-red-500 bg-red-100 dark:bg-red-950/30 px-1.5 py-0.5 rounded">
+                                Bắt buộc
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-600 dark:text-slate-400 text-sm truncate mb-2">
+                            {q.question_text.replace(/[#*`_[\]()-]/g, "")}
+                          </p>
+                          <div className="text-sm font-medium text-slate-800 dark:text-slate-300 bg-white dark:bg-slate-800/50 border border-slate-150 dark:border-slate-700/60 rounded-lg px-3 py-2">
+                            {ansText}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 mt-1">
+                          {isAnswered ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 px-2 py-1 rounded-full">
+                              ✅ Đã lưu
+                            </span>
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
+                              q.is_required 
+                                ? "text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50" 
+                                : "text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50"
+                            }`}>
+                              ⚠️ Chưa lưu
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-4">
+            {unansweredRequired.length > 0 && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm rounded-xl font-medium">
+                ⚠️ Cảnh báo: Còn {unansweredRequired.length} câu hỏi bắt buộc chưa có câu trả lời được ghi nhận trên máy chủ. Bạn nên quay lại trả lời để tránh bị mất điểm.
+              </div>
+            )}
+            {unansweredRequired.length === 0 && unansweredCount > 0 && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 text-sm rounded-xl font-medium">
+                ⚠️ Lưu ý: Bạn vẫn còn {unansweredCount} câu hỏi chưa trả lời. Bạn có muốn quay lại để hoàn tất?
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowReviewModal(false)}
+                disabled={submitting}
+                className="px-5 py-2.5 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all font-semibold"
+              >
+                Quay lại làm tiếp
+              </Button>
+              <Button
+                onClick={handleFinalSubmit}
+                disabled={submitting || fetchingServerAnswers}
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md shadow-green-500/10 hover:shadow-green-500/20 active:scale-95 transition-all font-semibold flex items-center gap-2 disabled:opacity-50"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Đang nộp bài...
+                  </>
+                ) : (
+                  "Xác nhận nộp bài"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -627,11 +912,11 @@ export default function StudentQuizTakingPage() {
 
           {currentQuestion === questions.length - 1 ? (
             <Button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              onClick={handleOpenReviewModal}
+              disabled={submitting || activeSaveRequests > 0}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold shadow-md shadow-green-500/10 hover:shadow-green-500/20 active:scale-95 transition-all"
             >
-              {submitting ? "Đang nộp..." : "Nộp bài"}
+              {submitting ? "Đang nộp..." : activeSaveRequests > 0 ? "Đang lưu..." : "Nộp bài"}
             </Button>
           ) : (
             <Button
@@ -643,6 +928,9 @@ export default function StudentQuizTakingPage() {
           )}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {renderReviewModal()}
 
       {/* Image Modal */}
       {showImageModal && (

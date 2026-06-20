@@ -92,26 +92,27 @@ export async function setChannelRoles(
   await chatApiClient.put(`/admin/channels/${channelId}/roles`, { roles });
 }
 
-export async function getChannelUsers(channelId: number): Promise<number[]> {
+// getChannelUsers returns the full user objects for a channel's whitelist.
+// The backend JOINs in a single query — no N+1.
+export async function getChannelUsers(channelId: number): Promise<ChatUser[]> {
   const res = await chatApiClient.get(`/admin/channels/${channelId}/users`);
-  return res.data.data?.user_ids ?? [];
+  return (res.data.data?.users ?? []).map(mapUser);
 }
 
-export async function setChannelUsers(channelId: number, userIds: number[]): Promise<void> {
-  await chatApiClient.put(`/admin/channels/${channelId}/users`, { user_ids: userIds });
+// setChannelUsers atomically replaces the whitelist and returns the updated full list.
+// The backend returns the new state in the same response — no follow-up GET needed.
+export async function setChannelUsers(channelId: number, userIds: number[]): Promise<ChatUser[]> {
+  const res = await chatApiClient.put(`/admin/channels/${channelId}/users`, { user_ids: userIds });
+  return (res.data.data?.users ?? []).map(mapUser);
 }
 
 // ─── Direct Messages (DMs) ───────────────────────────────────────────────────
 
 export async function searchUsers(query: string): Promise<ChatUser[]> {
   const res = await chatApiClient.get("/chat/users/search", { params: { q: query } });
-  return (res.data.data ?? []).map((u: any) => ({
-    id: u.id,
-    email: u.email,
-    fullName: u.full_name,
-    profilePicture: u.profile_picture ?? "",
-  }));
+  return (res.data.data ?? []).map(mapUser);
 }
+
 
 export async function getOrCreateDM(targetUserId: number): Promise<ChatChannel> {
   const res = await chatApiClient.post("/chat/dm", { user_id: targetUserId });
@@ -136,6 +137,16 @@ function mapChannel(raw: any): ChatChannel {
       profilePicture: raw.dm_user.profile_picture ?? "",
     } : undefined,
     createdAt: raw.created_at,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapUser(raw: any): ChatUser {
+  return {
+    id: raw.id,
+    email: raw.email,
+    fullName: raw.full_name,
+    profilePicture: raw.profile_picture ?? "",
   };
 }
 

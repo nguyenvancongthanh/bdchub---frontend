@@ -23,6 +23,7 @@ import {
 
 import lmsService from "@/services/lmsService";
 import progressService, { CourseProgress, ProgressDetailItem } from "@/services/progressService";
+import { useSession } from "next-auth/react";
 
 import { ProgressBar, PageLoader } from "@/components/lms/shared";
 import { BreadcrumbNav, type BreadcrumbItem } from "@/components/lms/BreadcrumbNav";
@@ -236,6 +237,23 @@ function StudentCourseDetailLayoutInner({ children }: { children: React.ReactNod
   // ── Core state ──
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
+  const [coTeachers, setCoTeachers] = useState<any[]>([]);
+  
+  const { data: session } = useSession();
+  const userId = session?.user ? Number((session.user as any).id || (session.user as any).userId) : undefined;
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+
+  useEffect(() => {
+    lmsService.getMyRoles().then(roles => setUserRoles(roles || [])).catch(() => {});
+  }, []);
+
+  const isCourseTeacher = useMemo(() => {
+    if (!userId || !course) return false;
+    const isCreator = course.created_by === userId;
+    const isCo = coTeachers.some(ct => ct.user_id === userId);
+    const isAdmin = userRoles.includes("ADMIN");
+    return isCreator || isCo || isAdmin;
+  }, [userId, course, coTeachers, userRoles]);
   const [sectionContents, setSectionContents] = useState<Record<number, Content[]>>({});
   const [loadingSection, setLoadingSection] = useState<Record<number, boolean>>({});
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -272,11 +290,13 @@ function StudentCourseDetailLayoutInner({ children }: { children: React.ReactNod
   useEffect(() => {
     (async () => {
       try {
-        const [courseRes, sectionsRes] = await Promise.all([
+        const [courseRes, sectionsRes, coTeachersRes] = await Promise.all([
           lmsService.getCourse(id),
           lmsService.listSections(id),
+          lmsService.getCoTeachers(id).catch(() => []),
         ]);
         setCourse(courseRes?.data ?? null);
+        setCoTeachers(coTeachersRes ?? []);
         const secs: Section[] = sectionsRes?.data ?? [];
         setSections(secs);
 
@@ -414,6 +434,7 @@ function StudentCourseDetailLayoutInner({ children }: { children: React.ReactNod
     course,
     sections,
     courseId: id,
+    coTeachers,
     activeContent,
     setActiveContent: handleSelectContent,
     sectionContents,
@@ -430,7 +451,7 @@ function StudentCourseDetailLayoutInner({ children }: { children: React.ReactNod
     progressDetail,
     loadProgress,
   }), [
-    course, sections, id,
+    course, sections, id, coTeachers,
     activeContent, handleSelectContent,
     sectionContents, loadSectionContents, loadingSection,
     expanded, toggleSection,
@@ -481,6 +502,29 @@ function StudentCourseDetailLayoutInner({ children }: { children: React.ReactNod
         <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
           Đã hoàn thành <span className="font-bold text-slate-700 dark:text-slate-200">{completedCount}</span> trên <span className="font-bold text-slate-700 dark:text-slate-200">{totalMandatory}</span> bài bắt buộc
         </p>
+
+        {/* Giảng viên & Trợ giảng */}
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-1.5">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            Giảng viên phụ trách
+          </p>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span className="text-xs font-bold text-slate-750 dark:text-slate-350">
+                {course?.teacher_name || "Giáo viên"}
+              </span>
+            </div>
+            {coTeachers.map((ct: any) => (
+              <div key={ct.id} className="flex items-center gap-1.5 pl-3 group relative cursor-help" title={ct.email}>
+                <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-650" />
+                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-455 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                  {ct.full_name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Section list */}
@@ -522,6 +566,20 @@ function StudentCourseDetailLayoutInner({ children }: { children: React.ReactNod
         <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center gap-3">
             <BreadcrumbNav items={breadcrumbItems} className="flex-1 min-w-0" />
+
+            {isCourseTeacher && (
+              <Link
+                href={`/lms/teacher/courses/${id}/overview`}
+                className="
+                  flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+                  bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                  text-white rounded-xl shadow-xs hover:shadow-md
+                  active:scale-95 transition-all duration-200
+                "
+              >
+                ⚙️ Quản lý
+              </Link>
+            )}
 
             {/* Tab switcher pill */}
             <div className="hidden sm:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-1 flex-shrink-0 shadow-inner">

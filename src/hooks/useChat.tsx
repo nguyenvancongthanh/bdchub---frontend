@@ -9,8 +9,36 @@ import {
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ChatChannel, ChatMessage, WSEvent, WSMessagePayload, WSDeletePayload } from "@/types/chat";
-import { listChannels, listMessages, sendMessageRest } from "@/services/chatService";
+import { listChannels, listMessages, sendMessageRest, getOrCreateDM } from "@/services/chatService";
+
+// ─── Notification helpers ─────────────────────────────────────────────────────
+
+/** Play a short "ting" chime using Web Audio API — no file/network needed. */
+function playChatSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "triangle";
+    // Pitch sweep: 880 Hz → 660 Hz over 120 ms
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.18);
+    // Release AudioContext after the chime finishes
+    osc.onended = () => ctx.close();
+  } catch {
+    // AudioContext blocked or unavailable — silently ignore
+  }
+}
+
+const DEFAULT_TITLE = "BDC Chat";
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +77,12 @@ const HISTORY_LIMIT = 50;
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
+  // Used to filter out own messages from notifications
+  const currentUserId  = (session as any)?.user?.id  as string | undefined;
+  const currentEmail   = (session as any)?.user?.email as string | undefined;
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   // State
   const [channels, setChannels] = useState<ChatChannel[]>([]);
@@ -60,6 +94,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<number, number>>({});
   const [isConnected, setIsConnected] = useState(false);
+
+  // Total unread across all channels (drives tab title)
+  const totalUnreadRef = useRef(0);
 
   // WebSocket refs
   const wsRef = useRef<WebSocket | null>(null);
@@ -179,7 +216,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         // Increment unread if not the active channel
         setActiveChannelIdRaw((active) => {
           if (active !== channelId) {
-            setUnreadCounts((u) => ({ ...u, [channelId]: (u[channelId] ?? 0) + 1 }));
+            setUnreadCounts((counts) => {
+              const next = { ...counts, [channelId]: (counts[channelId] ?? 0) + 1 };
+              // Recompute total for tab title
+              totalUnreadRef.current = Object.values(next).reduce((s, n) => s + n, 0);
+              return next;
+            });
+
+            // Notify only when:
+            //  1. Tab is not visible (user is away)
+            //  2. Message is NOT from the current user
+            const isOwnMsg =
+              currentUserId  ? String(p.sender_id) === currentUserId
+              : currentEmail ? p.sender_name === currentEmail
+              : false;
+
+            if (document.hidden && !isOwnMsg) {
+              playChatSound();
+              document.title = `(${totalUnreadRef.current}) ${DEFAULT_TITLE}`;
+            }
           }
           return active;
         });
@@ -200,14 +255,42 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       default:
         break;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserId, currentEmail]);
+
+  // ── Page-visibility listener: reset title when user returns to tab ───────────
+  useEffect(() => {
+    const onVisible = () => {
+      if (!document.hidden) {
+        document.title = DEFAULT_TITLE;
+        // Also clear all unread counts when user focuses the page
+        setUnreadCounts((counts) => {
+          const allZero: Record<number, number> = {};
+          Object.keys(counts).forEach((k) => { allZero[Number(k)] = 0; });
+          totalUnreadRef.current = 0;
+          return allZero;
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
   // ── Active channel management ─────────────────────────────────────────────────
   const setActiveChannelId = useCallback(
     (id: number) => {
       setActiveChannelIdRaw(id);
-      // Clear unread badge
-      setUnreadCounts((u) => ({ ...u, [id]: 0 }));
+      // Clear unread badge for this channel and update tab title
+      setUnreadCounts((u) => {
+        const next = { ...u, [id]: 0 };
+        totalUnreadRef.current = Object.values(next).reduce((s, n) => s + n, 0);
+        if (totalUnreadRef.current === 0) {
+          document.title = DEFAULT_TITLE;
+        } else {
+          document.title = `(${totalUnreadRef.current}) ${DEFAULT_TITLE}`;
+        }
+        return next;
+      });
 
       // Load history if not yet loaded
       if (!messagesByChannel[id]) {
@@ -280,6 +363,49 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       del(activeChannelId, msgId)
     );
   }, [activeChannelId]);
+
+  // Auto-select DM channel if userId parameter is present
+  useEffect(() => {
+    if (!token || channelsLoading) return;
+    const userIdStr = searchParams.get("userId");
+    if (!userIdStr) return;
+
+    const targetUserId = parseInt(userIdStr, 10);
+    if (isNaN(targetUserId)) return;
+
+    // Check if we already have a DM channel with this user
+    const existingDm = channels.find(
+      (c) => c.isDm && c.dmUser?.id === targetUserId
+    );
+
+    if (existingDm) {
+      setActiveChannelId(existingDm.id);
+      // Clean up the URL query parameter
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete("userId");
+      const cleanUrl = `/chat${newParams.toString() ? `?${newParams.toString()}` : ""}`;
+      router.replace(cleanUrl);
+    } else {
+      // Create new DM
+      setMessagesLoading(true);
+      getOrCreateDM(targetUserId)
+        .then((channel) => {
+          addChannel(channel);
+          setActiveChannelId(channel.id);
+          // Clean up search param
+          const newParams = new URLSearchParams(searchParams.toString());
+          newParams.delete("userId");
+          const cleanUrl = `/chat${newParams.toString() ? `?${newParams.toString()}` : ""}`;
+          router.replace(cleanUrl);
+        })
+        .catch((err) => {
+          console.error("Failed to auto-create DM channel:", err);
+        })
+        .finally(() => {
+          setMessagesLoading(false);
+        });
+    }
+  }, [token, channelsLoading, searchParams, channels, addChannel, setActiveChannelId, router]);
 
   // ── Computed values ───────────────────────────────────────────────────────────
   const messages = activeChannelId ? (messagesByChannel[activeChannelId] ?? []) : [];

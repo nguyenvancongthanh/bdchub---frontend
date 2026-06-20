@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw, Search } from "lucide-react";
+import Link from "next/link";
 import { analyticsService, CourseStudentProgress } from "@/services/analyticsService";
 import { StudentSummaryBar }    from "@/components/lms/teacher/students/StudentSummaryBar";
 import { StudentProgressTable } from "@/components/lms/teacher/students/StudentProgressTable";
@@ -251,12 +252,12 @@ function InlineStudentDetail({
         )}
 
         {/* Contact */}
-        <a
-          href={`mailto:${student.student_email}`}
+        <Link
+          href={`/chat?userId=${student.student_id}`}
           className="block w-full text-center py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all active:scale-95"
         >
           Liên hệ học viên
-        </a>
+        </Link>
       </div>
     </div>
   );

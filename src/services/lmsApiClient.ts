@@ -22,6 +22,12 @@ lmsApiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       clearAccessTokenCache();
+      try {
+        const { lmsService } = await import("./lmsService");
+        lmsService.clearRolesCache();
+      } catch (e) {
+        console.error("Failed to clear roles cache:", e);
+      }
       const { signOut } = await import("next-auth/react");
       if (typeof window !== "undefined") {
         signOut({ callbackUrl: "/login" });

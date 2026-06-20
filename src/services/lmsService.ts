@@ -1,11 +1,34 @@
 import { lmsApiClient } from "./lmsApiClient";
 
 class LMSService {
+  private rolesPromise: Promise<string[] | null> | null = null;
+  private cachedRoles: string[] | null = null;
+
   // ─── User ─────────────────────────────────────────────────────────────────
 
   async getMyRoles() {
-    const response = await lmsApiClient.get("/me/roles");
-    return response.data?.data?.roles;
+    if (this.cachedRoles) {
+      return this.cachedRoles;
+    }
+    if (this.rolesPromise) {
+      return this.rolesPromise;
+    }
+    this.rolesPromise = lmsApiClient.get("/me/roles")
+      .then(response => {
+        this.cachedRoles = response.data?.data?.roles || [];
+        this.rolesPromise = null;
+        return this.cachedRoles;
+      })
+      .catch(err => {
+        this.rolesPromise = null;
+        throw err;
+      });
+    return this.rolesPromise;
+  }
+
+  clearRolesCache() {
+    this.cachedRoles = null;
+    this.rolesPromise = null;
   }
 
   // ─── Course ───────────────────────────────────────────────────────────────
@@ -217,6 +240,30 @@ class LMSService {
       file_url: fileUrl,
     });
     return response.data;
+  }
+
+  // ─── Co-Teachers ───────────────────────────────────────────────────────────
+
+  async addCoTeacher(courseId: number, userId: number) {
+    const response = await lmsApiClient.post(`/courses/${courseId}/co-teachers`, {
+      user_id: userId,
+    });
+    return response.data;
+  }
+
+  async removeCoTeacher(courseId: number, userId: number) {
+    const response = await lmsApiClient.delete(`/courses/${courseId}/co-teachers/${userId}`);
+    return response.data;
+  }
+
+  async getCoTeachers(courseId: number) {
+    const response = await lmsApiClient.get(`/courses/${courseId}/co-teachers`);
+    return response.data?.data;
+  }
+
+  async searchTeachers(query: string) {
+    const response = await lmsApiClient.get("/users/teachers", { params: { q: query } });
+    return response.data?.data;
   }
 }
 

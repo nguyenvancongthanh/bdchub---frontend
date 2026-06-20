@@ -18,6 +18,7 @@ export interface Course {
   enrollment_count?: number;
   org_id?: number;
   visibility?: "PUBLIC" | "ORG_ONLY";
+  created_by?: number;
 }
 
 export interface Section {

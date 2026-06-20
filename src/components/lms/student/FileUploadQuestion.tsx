@@ -50,7 +50,7 @@ export default function FileUploadQuestion({
       return allowedExtensions.join(',');
     }
     // Default: allow common document types
-    return ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.zip,.rar";
+    return ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.zip,.rar,.7z,.tar,.gz,.ipynb,.py,.cpp,.sh,.json,.sql";
   };
 
   const formatFileSize = (bytes: number): string => {

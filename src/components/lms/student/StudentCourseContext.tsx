@@ -11,6 +11,7 @@ export interface StudentCourseContextValue {
   course: Course | null;
   sections: Section[];
   courseId: number;
+  coTeachers?: any[];
 
   // Content navigation
   activeContent: Content | null;

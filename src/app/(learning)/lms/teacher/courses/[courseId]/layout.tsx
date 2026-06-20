@@ -25,6 +25,7 @@ const COURSE_TABS = [
   { id: "overview", label: "Tổng quan", path: "/overview" },
   { id: "content", label: "Nội dung", path: "/content" },
   { id: "learners", label: "Học viên", path: "/learners" },
+  { id: "co-teachers", label: "Đồng giáo viên", path: "/co-teachers" },
   { id: "students", label: "Tiến độ học tập", path: "/students" },
   { id: "ai", label: "🤖 AI", path: "/ai" },
 ];

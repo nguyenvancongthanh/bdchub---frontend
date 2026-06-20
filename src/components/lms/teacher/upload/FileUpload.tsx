@@ -32,7 +32,7 @@ export default function FileUpload({
       case "video":
         return ".mp4,.avi,.mov,.mkv,.webm,.flv,.wmv,.m4v";
       case "document":
-        return ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv";
+        return ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.zip,.rar,.7z,.tar,.gz,.ipynb,.py,.cpp,.sh,.json,.sql";
       case "image":
         return ".jpg,.jpeg,.png,.gif,.bmp,.svg,.webp";
       default:

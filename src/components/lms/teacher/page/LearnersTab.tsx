@@ -8,7 +8,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Users, CheckCircle2 } from "lucide-react";
+import { Users, CheckCircle2, MessageSquare } from "lucide-react";
+import Link from "next/link";
 import lmsService from "@/services/lmsService";
 import { Badge, EmptyState, PageLoader, StatCard, TabBar } from "@/components/lms/shared";
 
@@ -113,10 +114,19 @@ export function LearnersTab({ courseId }: LearnersTabProps) {
                 </p>
               </div>
 
-              {/* Status badge */}
-              <Badge variant={l.status === "ACCEPTED" ? "green" : "red"}>
-                {l.status === "ACCEPTED" ? "Đã duyệt" : "Từ chối"}
-              </Badge>
+              {/* Status and Action */}
+              <div className="flex items-center gap-2">
+                <Badge variant={l.status === "ACCEPTED" ? "green" : "red"}>
+                  {l.status === "ACCEPTED" ? "Đã duyệt" : "Từ chối"}
+                </Badge>
+                <Link
+                  href={`/chat?userId=${l.student_id}`}
+                  className="flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 active:scale-95 transition-all duration-200"
+                  title="Liên hệ học viên"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           ))}
         </div>
