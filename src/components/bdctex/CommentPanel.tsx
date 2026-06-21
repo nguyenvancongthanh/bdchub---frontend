@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   X, MessageSquare, CheckCircle2, Circle,
-  CornerDownRight, Send, Trash2, ChevronDown,
+  CornerDownRight, Send, Trash2,
 } from "lucide-react";
 import type { LatexComment, LatexFile } from "@/types";
 import { useComments } from "@/hooks/useComments";
@@ -66,7 +66,7 @@ function CommentCard({ comment, isOwner, canComment, currentUserId, onResolve, o
         {comment.selected_text && !comment.parent_id && (
           <div className="mb-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-950/20 border-l-2 border-amber-400 dark:border-amber-600 rounded-r-lg">
             <p className="text-[10px] text-amber-700 dark:text-amber-400 font-mono line-clamp-2 italic">
-              "{comment.selected_text}"
+              &ldquo;{comment.selected_text}&rdquo;
             </p>
           </div>
         )}
@@ -291,7 +291,7 @@ export function CommentPanel({
             <div className="flex items-start gap-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-lg">
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">Bình luận về đoạn đã chọn:</p>
-                <p className="text-[10px] text-amber-600 dark:text-amber-500 font-mono truncate italic">"{textSelection.text.substring(0, 80)}{textSelection.text.length > 80 ? "..." : ""}"</p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-500 font-mono truncate italic">&ldquo;{textSelection.text.substring(0, 80)}{textSelection.text.length > 80 ? "..." : ""}&rdquo;</p>
               </div>
               <button onClick={onClearSelection} className="text-amber-400 hover:text-amber-600 shrink-0">
                 <X size={12} />

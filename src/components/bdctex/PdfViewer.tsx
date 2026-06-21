@@ -62,7 +62,7 @@ export function PdfViewer({ pdfUrl, compiling, errorMsg }: PdfViewerProps) {
               Chưa có bản xem trước PDF
             </span>
             <span className="text-xs text-slate-400 mt-2">
-              Nhấn nút "Biên dịch" trên thanh công cụ để build tệp PDF xem trước.
+              Nhấn nút &ldquo;Biên dịch&rdquo; trên thanh công cụ để build tệp PDF xem trước.
             </span>
           </div>
         )}

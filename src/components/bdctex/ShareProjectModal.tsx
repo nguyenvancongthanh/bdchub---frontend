@@ -5,7 +5,7 @@ import {
   X, Users, Link2, Copy, Check, Trash2, Plus,
   ChevronDown, Crown, Edit3, Eye, MessageSquare, Shield,
 } from "lucide-react";
-import type { Collaborator, ShareLink } from "@/types";
+import type { ShareLink } from "@/types";
 import { useCollaborators } from "@/hooks/useCollaborators";
 
 interface ShareProjectModalProps {

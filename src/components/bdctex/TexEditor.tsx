@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Eye } from "lucide-react";
 import type { LatexFile } from "@/types";
 

@@ -35,13 +35,15 @@ export function FileTree({ files, activeFile, onSelect, onDelete, onUploadClick 
         <h4 className="font-bold text-sm text-slate-900 dark:text-slate-50 uppercase tracking-wider">
           Tài liệu dự án
         </h4>
-        <button
-          onClick={onUploadClick}
-          className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 p-1.5 rounded-lg active:scale-95 transition-all duration-200"
-          title="Tải lên file / ZIP"
-        >
-          <Plus size={16} />
-        </button>
+        {onUploadClick && (
+          <button
+            onClick={onUploadClick}
+            className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 p-1.5 rounded-lg active:scale-95 transition-all duration-200"
+            title="Tải lên file / ZIP"
+          >
+            <Plus size={16} />
+          </button>
+        )}
       </div>
 
       {/* Files List */}
@@ -76,18 +78,20 @@ export function FileTree({ files, activeFile, onSelect, onDelete, onUploadClick 
                 </div>
 
                 {/* Delete button (hidden by default, shown on hover) */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Bạn có chắc chắn muốn xóa tệp "${file.filename}"?`)) {
-                      onDelete(file.id);
-                    }
-                  }}
-                  className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150 active:scale-95"
-                  title="Xóa tệp"
-                >
-                  <Trash2 size={13} />
-                </button>
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Bạn có chắc chắn muốn xóa tệp "${file.filename}"?`)) {
+                        onDelete(file.id);
+                      }
+                    }}
+                    className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150 active:scale-95"
+                    title="Xóa tệp"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             );
           })

@@ -1,16 +1,5 @@
 import { latexApiClient } from "./latexApiClient";
-import type {
-  LatexProject,
-  LatexFile,
-  CompileJob,
-  LatexTemplate,
-  TexPackage,
-  CreateProjectRequest,
-  UpdateProjectRequest,
-  Collaborator,
-  LatexComment,
-  ShareLink,
-} from "@/types";
+import type { CreateProjectRequest, UpdateProjectRequest } from "@/types";
 
 class LatexService {
   // ─── Projects ─────────────────────────────────────────────────────────────

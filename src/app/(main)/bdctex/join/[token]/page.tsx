@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { latexService } from "@/services/latexService";
 
 interface JoinPageProps {
@@ -14,7 +14,6 @@ export default function JoinProjectPage({ params }: JoinPageProps) {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
-  const [projectId, setProjectId] = useState<number | null>(null);
 
   useEffect(() => {
     async function join() {
@@ -22,7 +21,6 @@ export default function JoinProjectPage({ params }: JoinPageProps) {
         const res = await latexService.joinViaShareLink(token);
         if (res.success && res.data) {
           setStatus("success");
-          setProjectId(res.data.project_id);
           setMessage("Bạn đã tham gia dự án thành công!");
           setTimeout(() => {
             router.push(`/bdctex/${res.data.project_id}`);
