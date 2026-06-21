@@ -8,7 +8,8 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
-RUN npm ci --prefer-offline --no-audit --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit --legacy-peer-deps
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -45,8 +46,9 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXTAUTH_URL=${NEXTAUTH_URL} \
     AI_SERVICE_SECRET=${AI_SERVICE_SECRET}
 
-# Build Next.js application
-RUN npm run build
+# Build Next.js application with cache mount
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
 
 # Stage 3: Runner (Production)
 FROM node:20-alpine AS runner
