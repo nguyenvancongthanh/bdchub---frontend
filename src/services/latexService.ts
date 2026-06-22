@@ -81,6 +81,21 @@ class LatexService {
     return response.data;
   }
 
+  async renameFile(projectId: number, fileId: number, filename: string) {
+    const response = await latexApiClient.put(`/projects/${projectId}/files/${fileId}/rename`, {
+      filename,
+    });
+    return response.data;
+  }
+
+  async createFile(projectId: number, filename: string, content: string = "") {
+    const response = await latexApiClient.post(`/projects/${projectId}/files/create`, {
+      filename,
+      content,
+    });
+    return response.data;
+  }
+
   // ─── Compilation ──────────────────────────────────────────────────────────
 
   async compile(projectId: number, compiler?: string) {

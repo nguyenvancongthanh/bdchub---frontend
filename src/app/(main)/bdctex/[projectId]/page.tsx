@@ -53,6 +53,9 @@ export default function LatexEditorPage({ params }: EditorPageProps) {
     handleContentChange,
     saveActiveFile,
     deleteFile,
+    renameFile,
+    createFile,
+    createFolder,
     uploadFiles,
     uploadZip,
   } = useLatexEditor(projectId);
@@ -139,6 +142,9 @@ export default function LatexEditorPage({ params }: EditorPageProps) {
           activeFile={activeFile}
           onSelect={selectFile}
           onDelete={canEdit ? deleteFile : undefined}
+          onRename={canEdit ? renameFile : undefined}
+          onCreateFile={canEdit ? createFile : undefined}
+          onCreateFolder={canEdit ? createFolder : undefined}
           onUploadClick={canEdit ? () => setUploadModalOpen(true) : undefined}
         />
 

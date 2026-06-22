@@ -111,6 +111,49 @@ export function useLatexEditor(projectId: number) {
     }
   };
 
+  const renameFile = async (fileId: number, newFilename: string) => {
+    try {
+      const res = await latexService.renameFile(projectId, fileId, newFilename);
+      if (res.success) {
+        setFiles((prev) =>
+          prev.map((f) => (f.id === fileId ? { ...f, filename: newFilename } : f))
+        );
+        if (activeFile?.id === fileId) {
+          setActiveFile((prev) => (prev ? { ...prev, filename: newFilename } : null));
+        }
+      } else {
+        throw new Error(res.message || "Failed to rename file");
+      }
+    } catch (err: any) {
+      console.error("Failed to rename file:", err);
+      alert("Đổi tên file thất bại: " + err.message);
+    }
+  };
+
+  const createFile = async (filename: string, content: string = "") => {
+    try {
+      const res = await latexService.createFile(projectId, filename, content);
+      if (res.success && res.data) {
+        const newFile: LatexFile = res.data;
+        setFiles((prev) => [...prev, newFile]);
+        if (!newFile.filename.endsWith("/.keep")) {
+          await selectFile(newFile);
+        }
+        return newFile;
+      } else {
+        throw new Error(res.message || "Failed to create file");
+      }
+    } catch (err: any) {
+      console.error("Failed to create file:", err);
+      alert("Tạo file thất bại: " + err.message);
+    }
+  };
+
+  const createFolder = async (folderPath: string) => {
+    const placeholderPath = `${folderPath.replace(/\/$/, "")}/.keep`;
+    return createFile(placeholderPath, "");
+  };
+
   const uploadFiles = async (uploadedFiles: File[]) => {
     try {
       const res = await latexService.uploadFiles(projectId, uploadedFiles);
@@ -146,6 +189,9 @@ export function useLatexEditor(projectId: number) {
     handleContentChange,
     saveActiveFile,
     deleteFile,
+    renameFile,
+    createFile,
+    createFolder,
     uploadFiles,
     uploadZip,
     refreshFiles: fetchFiles,
