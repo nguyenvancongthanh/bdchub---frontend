@@ -1,16 +1,21 @@
 import 'devextreme/dist/css/dx.light.css';
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import { Inter, Roboto_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import Providers from "@/providers/MainProvider";
 
-const geistSans = Inter({
-  variable: "--font-geist-sans",
+const interFont = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
-const geistMono = Roboto_Mono({
-  variable: "--font-geist-mono",
+const outfitFont = Outfit({
+  variable: "--font-heading",
+  subsets: ["latin"],
+});
+
+const monoFont = Roboto_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -24,7 +29,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden no-scrollbar`}>
+      <body className={`${outfitFont.variable} ${interFont.variable} ${monoFont.variable} font-body antialiased overflow-x-hidden no-scrollbar`}>
         <Providers>
           {children}
         </Providers>

@@ -1,15 +1,121 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-
 @variant dark (&:where(.dark, .dark *));
-/* Animation Timing Scale & Variables */
+
+/* Design System v4.0 Theme Variables */
 :root {
+  /* Animation Timing Scale & Variables */
   --duration-fast: 150ms;
   --duration-normal: 300ms;
   --duration-slow: 500ms;
   --duration-stagger: 100ms;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Backgrounds (Light Mode) ── */
+  --bg-root: #F8FAFC;
+  --bg-shell: #FFFFFF;
+  --bg-section: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFC;
+  --bg-input: #F8FAFC;
+  --bg-hover: #F1F5F9;
+
+  /* ── Borders (Light Mode) ── */
+  --border-subtle: #E2E8F0;
+  --border-hover: #CBD5E1;
+  --border-section: #E2E8F0;
+  --border-input: #CBD5E1;
+  --border-focus: #3B82F6;
+
+  /* ── Text (Light Mode) ── */
+  --text-heading: #0F172A;
+  --text-subheading: #1E293B;
+  --text-body: #475569;
+  --text-muted: #64748B;
+  --text-disabled: #94A3B8;
+
+  /* ── Accents (Light Mode) ── */
+  --accent-primary: #2563EB;
+  --accent-primary-hover: #1D4ED8;
+  --accent-secondary: #22D3EE;
+  --accent-tertiary: #A78BFA;
+  --accent-glow: rgba(37, 99, 235, 0.06);
+
+  /* ── Gradients (Light Mode) ── */
+  --gradient-from: #60A5FA;
+  --gradient-to: #22D3EE;
+}
+
+.dark {
+  /* ── Backgrounds (Dark Mode - Navy Palette) ── */
+  --bg-root: #050B18;
+  --bg-shell: #070E1C;
+  --bg-section: #0A1628;
+  --bg-card: #0F1E35;
+  --bg-card-hover: #132240;
+  --bg-input: #0D192E;
+  --bg-hover: #162644;
+
+  /* ── Borders (Dark Mode) ── */
+  --border-subtle: rgba(59, 130, 246, 0.10);
+  --border-hover: rgba(59, 130, 246, 0.25);
+  --border-section: rgba(148, 163, 184, 0.08);
+  --border-input: rgba(59, 130, 246, 0.20);
+  --border-focus: rgba(6, 182, 212, 0.50);
+
+  /* ── Text (Dark Mode) ── */
+  --text-heading: #FFFFFF;
+  --text-subheading: #F1F5F9;
+  --text-body: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-disabled: #64748B;
+
+  /* ── Accents (Dark Mode) ── */
+  --accent-primary: #2563EB;
+  --accent-primary-hover: #1D4ED8;
+  --accent-secondary: #22D3EE;
+  --accent-tertiary: #A78BFA;
+  --accent-glow: rgba(37, 99, 235, 0.06);
+
+  /* ── Gradients (Dark Mode) ── */
+  --gradient-from: #60A5FA;
+  --gradient-to: #22D3EE;
+}
+
+@theme {
+  --color-bg-root: var(--bg-root);
+  --color-bg-shell: var(--bg-shell);
+  --color-bg-section: var(--bg-section);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card-hover: var(--bg-card-hover);
+  --color-bg-input: var(--bg-input);
+  --color-bg-hover: var(--bg-hover);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-hover: var(--border-hover);
+  --color-border-section: var(--border-section);
+  --color-border-input: var(--border-input);
+  --color-border-focus: var(--border-focus);
+
+  --color-text-heading: var(--text-heading);
+  --color-text-subheading: var(--text-subheading);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-hover: var(--accent-primary-hover);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-tertiary: var(--accent-tertiary);
+  --color-accent-glow: var(--accent-glow);
+
+  --color-gradient-from: var(--gradient-from);
+  --color-gradient-to: var(--gradient-to);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
 html, body {
@@ -21,10 +127,7 @@ html, body {
 
 /* Base page bg — sits behind the fixed canvas */
 html {
-  background-color: #f8fafc; /* slate-50 */
-}
-html:where(.dark) {
-  background-color: #050B18;
+  background-color: var(--bg-root);
 }
 
 /* Accessibility: Respect user preference for reduced motion */
@@ -99,26 +202,6 @@ html:where(.dark) {
   }
 }
 
-/* [DEAD] Unused in Landing */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-/* [DEAD] Unused in Landing */
-@keyframes float-delayed {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-30px);
-  }
-}
-
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 0.3;
@@ -168,15 +251,6 @@ html:where(.dark) {
   animation: fade-in-up var(--duration-fast) ease-out both;
 }
 
-.animate-float {
-  animation: float 1s ease-in-out infinite;
-}
-
-.animate-float-delayed {
-  animation: float-delayed 1s ease-in-out infinite;
-  animation-delay: 0.25s;
-}
-
 .animate-pulse-slow {
   animation: pulse-slow 1s ease-in-out infinite;
 }
@@ -190,35 +264,6 @@ html:where(.dark) {
   animation: scroll 0.5s ease-in-out infinite;
 }
 
-/* Cosmic Animations */
-/* [DEAD] Consider moving to component-specific CSS if used in Background.tsx */
-@keyframes glow-pulse {
-  0%, 100% {
-    opacity: 0.3;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
-  }
-  50% {
-    opacity: 0.6;
-    box-shadow: 0 0 40px rgba(59, 130, 246, 0.25);
-  }
-}
-
-/* [DEAD] Unused in Landing */
-@keyframes cosmic-drift {
-  0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  25% {
-    transform: translate(10px, -15px) rotate(1deg);
-  }
-  50% {
-    transform: translate(-5px, -25px) rotate(-1deg);
-  }
-  75% {
-    transform: translate(-15px, -10px) rotate(0.5deg);
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -226,14 +271,6 @@ html:where(.dark) {
   100% {
     background-position: 200% 0;
   }
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 4s ease-in-out infinite;
-}
-
-.animate-cosmic-drift {
-  animation: cosmic-drift 20s ease-in-out infinite;
 }
 
 .animate-shimmer {
