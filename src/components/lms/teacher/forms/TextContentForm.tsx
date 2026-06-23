@@ -1,7 +1,7 @@
 "use client";
 
-import MarkdownEditor from "@/components/markdown/MarkdownEditor";
-import type { ContentFormProps } from "@/types";
+import MarkdownEditor from"@/components/markdown/MarkdownEditor";
+import type { ContentFormProps } from"@/types";
 
 /**
  * TextContentForm
@@ -10,18 +10,18 @@ import type { ContentFormProps } from "@/types";
  * Stores the markdown string in metadata.content.
  */
 export function TextContentForm({ formData, onChange, disabled }: ContentFormProps) {
-  const content = (formData.metadata?.content as string) ?? "";
+ const content = (formData.metadata?.content as string) ??"";
 
-  const handleChange = (value: string) => {
-    onChange({ metadata: { ...formData.metadata, content: value } });
-  };
+ const handleChange = (value: string) => {
+ onChange({ metadata: { ...formData.metadata, content: value } });
+ };
 
-  return (
-    <MarkdownEditor
-      label="Nội dung văn bản *"
-      value={content}
-      onChange={handleChange}
-      placeholder="Nhập nội dung bài học… (hỗ trợ Markdown)"
-    />
-  );
+ return (
+ <MarkdownEditor
+ label="Nội dung văn bản *"
+ value={content}
+ onChange={handleChange}
+ placeholder="Nhập nội dung bài học… (hỗ trợ Markdown)"
+ />
+ );
 }

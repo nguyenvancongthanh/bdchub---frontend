@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
+import { redirect } from"next/navigation";
 
 export default async function StudentCourseRoot({
-  params,
+ params,
 }: {
-  params: Promise<{ courseId: string }>;
+ params: Promise<{ courseId: string }>;
 }) {
-  const { courseId } = await params;
-  redirect(`/lms/student/courses/${courseId}/learn`);
+ const { courseId } = await params;
+ redirect(`/lms/student/courses/${courseId}/learn`);
 }

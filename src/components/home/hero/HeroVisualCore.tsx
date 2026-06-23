@@ -129,7 +129,7 @@ export function HeroVisualCore({
       {/* Central BDC Logo with entry reveal scale & fade animation */}
       <motion.div
         variants={logoVariants}
-        className="absolute flex flex-col items-center justify-center text-center p-2 bg-white/40 dark:bg-[#0F1E35]/40 backdrop-blur-md border border-slate-200/50 dark:border-blue-500/10 rounded-full w-40 h-40 shadow-inner overflow-hidden group hover:border-blue-300/60 dark:hover:border-blue-500/30 transition-all duration-300"
+        className="absolute flex flex-col items-center justify-center text-center p-2 bg-white/40 dark:bg-bg-card/40 backdrop-blur-md border border-border-subtle rounded-full w-40 h-40 shadow-inner overflow-hidden group hover:border-border-hover transition-all duration-300"
       >
         <SafeImage
           src={LogoIcon}

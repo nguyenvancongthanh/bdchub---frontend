@@ -20,22 +20,22 @@ function PasswordChangeContent() {
 
 export default function ConfirmPasswordChangePage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent flex flex-col justify-center px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8 flex flex-col items-center">
         <Logo />
-        <h2 className="mt-4 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="mt-4 text-center text-3xl font-extrabold text-text-heading tracking-tight">
           Big Data Club
         </h2>
-        <p className="mt-2 text-center text-sm font-semibold text-blue-600 uppercase tracking-widest">
+        <p className="mt-2 text-center text-sm font-semibold text-accent-primary uppercase tracking-widest">
           Account Security
         </p>
       </div>
 
-      <Suspense fallback={<div className="text-center text-slate-500">Đang tải dữ liệu...</div>}>
+      <Suspense fallback={<div className="text-center text-text-muted">Đang tải dữ liệu...</div>}>
         <PasswordChangeContent />
       </Suspense>
 
-      <p className="text-center mt-10 text-sm text-slate-400 font-medium">
+      <p className="text-center mt-10 text-sm text-text-disabled font-medium">
         © {new Date().getFullYear()} BDC Platform. All rights reserved.
       </p>
     </div>

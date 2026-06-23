@@ -42,20 +42,20 @@ export default function Projects() {
                 <Link
                   href={project.projectShowcaseUrl}
                   className="p-5 rounded-2xl cursor-pointer group block
-                             bg-white dark:bg-[#0F1E35]
-                             border border-slate-200 dark:border-blue-500/10
+                             bg-bg-card
+                             border border-border-subtle
                              shadow-sm dark:shadow-none
                              hover:-translate-y-1
                              hover:shadow-lg hover:shadow-blue-500/5
                              dark:hover:shadow-[0_8px_30px_rgba(37,99,235,0.06)]
-                             hover:border-blue-300/60 dark:hover:border-blue-500/25
+                             hover:border-border-hover
                              transition-all duration-300"
                 >
-                  <h3 className="font-bold text-slate-900 dark:text-white flex items-center justify-between group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                  <h3 className="font-bold text-text-heading flex items-center justify-between group-hover:text-accent-primary dark:group-hover:text-accent-secondary transition-colors duration-300">
                     {project.projectName}
-                    <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all duration-300" />
+                    <ArrowRight className="w-4 h-4 text-text-muted dark:text-text-disabled group-hover:text-accent-primary dark:group-hover:text-accent-secondary group-hover:translate-x-0.5 transition-all duration-300" />
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{project.desc}</p>
+                  <p className="text-sm text-text-muted mt-2">{project.desc}</p>
                 </Link>
               </motion.div>
             ))}
@@ -75,13 +75,13 @@ export default function Projects() {
               <motion.div 
                 key={pub.id} 
                 variants={itemVariants}
-                className="pl-4 border-l-2 border-blue-600 dark:border-cyan-400
+                className="pl-4 border-l-2 border-accent-primary dark:border-accent-secondary
                                              hover:pl-5 hover:border-l-4
                                              transition-all duration-300 group"
               >
-                <h4 className="font-semibold text-slate-900 dark:text-white leading-snug group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors duration-300">{pub.title}</h4>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{pub.authors}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">{pub.publisher} ({pub.year})</p>
+                <h4 className="font-semibold text-text-heading leading-snug group-hover:text-accent-primary dark:group-hover:text-accent-secondary transition-colors duration-300">{pub.title}</h4>
+                <p className="text-sm text-text-body mt-1">{pub.authors}</p>
+                <p className="text-xs text-text-muted mt-1 italic">{pub.publisher} ({pub.year})</p>
               </motion.div>
             ))}
           </div>

@@ -42,7 +42,7 @@ export function HeroDescription({
   const isScrubMode = typeof customTime === "number" && !isNaN(customTime);
 
   return (
-    <div className="w-full text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl lg:max-w-xl leading-relaxed text-center lg:text-left transition-all duration-200">
+    <div className="w-full text-lg sm:text-xl text-text-body max-w-2xl lg:max-w-xl leading-relaxed text-center lg:text-left transition-all duration-200">
       {descriptionLines.map((line, idx) => (
         <span 
           key={idx} 

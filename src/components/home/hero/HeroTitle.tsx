@@ -115,7 +115,7 @@ export function HeroTitle({
     >
       {/* Title — bottom-up-letters per-character reveal (crisp edges, zero blur, Apple-style stagger) */}
       <h1 
-        className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight pt-2 pb-4 pl-0 pr-1 leading-[1.15] block text-center lg:text-left"
+        className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight pt-2 pb-4 pl-0 pr-1 leading-[1.15] block text-center lg:text-left"
         style={isScrubMode ? { transform: `scale(${confirmScale})` } : undefined}
       >
         {titleText.split(" ").map((word, wordIdx) => (
@@ -186,7 +186,7 @@ export function HeroTitle({
                   custom={{ index, total: printableCharsCount }}
                   variants={letterVariants}
                   animate={isScrubMode ? false : undefined}
-                  className={`inline-block will-change-transform [backface-visibility:hidden] py-2 -my-2 ${index === 0 ? "ml-[-0.05em]" : ""} bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-cyan-400`}
+                  className={`inline-block will-change-transform [backface-visibility:hidden] py-2 -my-2 ${index === 0 ? "ml-[-0.05em]" : ""} bg-gradient-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent`}
                   {...letterStyleProps}
                 >
                   {char}

@@ -66,9 +66,9 @@ export function HeroActions({
           <button
             onClick={() => router.push("/dashboard")}
             aria-label="Đi đến Bảng quản trị"
-            className="group px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl w-full sm:w-auto
-                       shadow-sm hover:shadow-lg hover:shadow-blue-600/20
-                       dark:shadow-blue-900/30 dark:hover:shadow-blue-500/20
+            className="group px-8 py-3.5 bg-accent-primary hover:bg-accent-primary-hover text-white font-semibold rounded-xl w-full sm:w-auto
+                       shadow-sm hover:shadow-lg hover:shadow-accent-primary/20
+                       dark:shadow-blue-900/30 dark:hover:shadow-accent-primary/20
                        active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
           >
             Bảng quản trị <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -77,10 +77,10 @@ export function HeroActions({
             href="#about"
             onClick={(e) => handleScrollToElement(e, "about")}
             aria-label="Tìm hiểu thêm về Big Data Club"
-            className="px-8 py-3.5 bg-white dark:bg-[#0F1E35] text-slate-800 dark:text-slate-300 font-medium rounded-xl w-full sm:w-auto text-center
-                       border border-slate-200 dark:border-blue-500/20
-                       hover:bg-slate-50 dark:hover:bg-[#162644]
-                       hover:border-slate-300 dark:hover:border-blue-500/40
+            className="px-8 py-3.5 bg-bg-shell dark:bg-bg-card text-text-heading dark:text-text-body font-medium rounded-xl w-full sm:w-auto text-center
+                       border border-border-subtle
+                       hover:bg-bg-hover
+                       hover:border-border-hover
                        hover:-translate-y-1 hover:shadow-md
                        active:scale-95 transition-all duration-300"
           >
@@ -92,9 +92,9 @@ export function HeroActions({
           <button
             onClick={() => router.push("/login")}
             aria-label="Bắt đầu ngay tại BDC Hub"
-            className="group px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl w-full sm:w-auto
-                       shadow-sm hover:shadow-lg hover:shadow-blue-600/20
-                       dark:shadow-blue-900/30 dark:hover:shadow-blue-500/20
+            className="group px-8 py-3.5 bg-accent-primary hover:bg-accent-primary-hover text-white font-semibold rounded-xl w-full sm:w-auto
+                       shadow-sm hover:shadow-lg hover:shadow-accent-primary/20
+                       dark:shadow-blue-900/30 dark:hover:shadow-accent-primary/20
                        active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
           >
             Bắt đầu ngay <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -103,10 +103,10 @@ export function HeroActions({
             href="#projects"
             onClick={(e) => handleScrollToElement(e, "projects")}
             aria-label="Khám phá các dự án nổi bật của BDC"
-            className="px-8 py-3.5 bg-white dark:bg-[#0F1E35] text-slate-800 dark:text-slate-300 font-medium rounded-xl w-full sm:w-auto text-center
-                       border border-slate-200 dark:border-blue-500/20
-                       hover:bg-slate-50 dark:hover:bg-[#162644]
-                       hover:border-slate-300 dark:hover:border-blue-500/40
+            className="px-8 py-3.5 bg-bg-shell dark:bg-bg-card text-text-heading dark:text-text-body font-medium rounded-xl w-full sm:w-auto text-center
+                       border border-border-subtle
+                       hover:bg-bg-hover
+                       hover:border-border-hover
                        hover:-translate-y-1 hover:shadow-md
                        active:scale-95 transition-all duration-300"
           >

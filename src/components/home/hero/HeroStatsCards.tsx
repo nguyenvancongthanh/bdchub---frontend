@@ -39,7 +39,7 @@ function StatCounter({ value, delay = 0 }: { value: string; delay?: number }) {
   }, [numericPart, delay]);
 
   return (
-    <div className="text-3xl font-extrabold text-blue-600 dark:text-cyan-400 group-hover:text-blue-500 dark:group-hover:text-cyan-300 transition-colors duration-300">
+    <div className="text-3xl font-extrabold text-accent-primary dark:text-accent-secondary group-hover:text-accent-primary-hover dark:group-hover:text-cyan-300 transition-colors duration-300">
       <span ref={ref}>0</span>
       <span>{suffix}</span>
     </div>
@@ -53,14 +53,14 @@ function SoftBlurInText({ text, delay = 0 }: { text: string; delay?: number }) {
 
   if (shouldReduceMotion) {
     return (
-      <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1.5 text-center">
+      <div className="text-xs font-bold text-text-muted uppercase tracking-wider mt-1.5 text-center">
         {text}
       </div>
     );
   }
 
   return (
-    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1.5 text-center flex justify-center flex-wrap gap-x-[1px]">
+    <div className="text-xs font-bold text-text-muted uppercase tracking-wider mt-1.5 text-center flex justify-center flex-wrap gap-x-[1px]">
       {characters.map((char, index) => (
         <motion.span
           key={index}
@@ -114,10 +114,10 @@ export function HeroStatsCards({
               {/* 3. Innermost Visual Wrapper - Handles glass design & hover zoom/spring-lift */}
               <div
                 className="relative flex flex-col items-center justify-center p-5 rounded-2xl cursor-default
-                           bg-white/70 dark:bg-[#0F1E35]/40 backdrop-blur-lg overflow-hidden
-                           border border-white/60 dark:border-blue-500/10
+                           bg-white/70 dark:bg-bg-card/40 backdrop-blur-lg overflow-hidden
+                           border border-border-subtle
                            shadow-[0_8px_30px_rgba(37,99,235,0.04)] dark:shadow-none
-                           hover:border-blue-400/40 dark:hover:border-blue-500/25
+                           hover:border-border-hover
                            hover:scale-[1.02] hover:-translate-y-0.5
                            hover:shadow-[0_12px_30px_rgba(37,99,235,0.06)]
                            dark:hover:shadow-[0_12px_30px_rgba(37,99,235,0.08)]

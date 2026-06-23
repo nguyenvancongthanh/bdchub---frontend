@@ -26,7 +26,7 @@ export default function Members() {
   };
 
   return (
-    <section id="members" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-[#070E1C]">
+    <section id="members" className="py-24 px-4 sm:px-6 lg:px-8 bg-bg-root">
       <div className="max-w-7xl mx-auto">
         <SectionHeader icon={Users} title="Đội Ngũ BDC" centered />
 
@@ -38,9 +38,9 @@ export default function Members() {
 
             return (
               <div key={teamKey}>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-8
-                                border-b border-slate-200 dark:border-blue-500/10 pb-2">
-                  {teamName} Team <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2">({teamData.length})</span>
+                <h3 className="text-xl font-bold font-heading text-text-subheading mb-8
+                                border-b border-border-subtle pb-2">
+                  {teamName} Team <span className="text-sm font-normal text-text-muted ml-2">({teamData.length})</span>
                 </h3>
                 <motion.div 
                   variants={containerVariants}
@@ -52,9 +52,9 @@ export default function Members() {
                   {teamData.map((member) => (
                     <motion.div key={member.id} variants={itemVariants} className="text-center group">
                       <div className="relative w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden
-                                      bg-slate-200 dark:bg-[#0F1E35]
+                                      bg-bg-section dark:bg-bg-card
                                       border-2 border-transparent
-                                      group-hover:border-blue-500 dark:group-hover:border-cyan-400
+                                      group-hover:border-accent-primary dark:group-hover:border-accent-secondary
                                       transition-all duration-300">
                         <SafeImage 
                           src={member.imageUrl} 
@@ -64,8 +64,8 @@ export default function Members() {
                           sizes="(max-width: 768px) 100px, 150px"
                         />
                       </div>
-                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm truncate px-2">{member.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{member.desc}</p>
+                      <h4 className="font-semibold text-text-heading text-sm truncate px-2">{member.name}</h4>
+                      <p className="text-xs text-text-muted">{member.desc}</p>
                     </motion.div>
                   ))}
                 </motion.div>

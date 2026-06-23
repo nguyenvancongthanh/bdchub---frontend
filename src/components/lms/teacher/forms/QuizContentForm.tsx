@@ -1,11 +1,11 @@
 "use client";
 
-import QuizSettingsForm, { QuizSettings } from "@/components/lms/teacher/QuizSettingsForm";
-import type { ContentFormProps } from "@/types";
+import QuizSettingsForm, { QuizSettings } from"@/components/lms/teacher/QuizSettingsForm";
+import type { ContentFormProps } from"@/types";
 
 interface QuizContentFormProps extends ContentFormProps {
-  quizSettings: QuizSettings;
-  onQuizSettingsChange: (s: QuizSettings) => void;
+ quizSettings: QuizSettings;
+ onQuizSettingsChange: (s: QuizSettings) => void;
 }
 
 /**
@@ -15,15 +15,15 @@ interface QuizContentFormProps extends ContentFormProps {
  * fields (time limit, attempts, shuffle, grading options…).
  */
 export function QuizContentForm({
-  disabled,
-  quizSettings,
-  onQuizSettingsChange,
+ disabled,
+ quizSettings,
+ onQuizSettingsChange,
 }: QuizContentFormProps) {
-  return (
-    <QuizSettingsForm
-      settings={quizSettings}
-      onChange={onQuizSettingsChange}
-      disabled={disabled}
-    />
-  );
+ return (
+ <QuizSettingsForm
+ settings={quizSettings}
+ onChange={onQuizSettingsChange}
+ disabled={disabled}
+ />
+ );
 }

@@ -43,18 +43,18 @@ export default function Activities() {
             <motion.div 
               key={activity.id} 
               variants={itemVariants}
-              className="bg-white dark:bg-[#0F1E35]
+              className="bg-bg-card
                                                rounded-2xl
-                                               border border-slate-200 dark:border-blue-500/10
+                                               border border-border-subtle
                                                overflow-hidden
                                                shadow-sm dark:shadow-none
                                                hover:-translate-y-1.5
                                                hover:shadow-xl hover:shadow-blue-500/5
                                                dark:hover:shadow-[0_12px_40px_rgba(37,99,235,0.08)]
-                                               hover:border-blue-300/60 dark:hover:border-blue-500/25
+                                               hover:border-border-hover
                                                transition-all duration-300 group"
             >
-              <div className="h-48 bg-slate-200 dark:bg-[#0A1628] relative overflow-hidden">
+              <div className="h-48 bg-bg-section relative overflow-hidden">
                 <SafeImage src={activity.imageUrl} alt={activity.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 dark:group-hover:bg-cyan-400/5 transition-colors duration-300" />
               </div>
@@ -62,12 +62,12 @@ export default function Activities() {
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
                                  text-xs font-semibold uppercase tracking-wider mb-3 w-fit
                                  bg-blue-50 dark:bg-blue-900/30
-                                 text-blue-600 dark:text-cyan-400
+                                 text-accent-primary dark:text-accent-secondary
                                  border border-blue-200 dark:border-blue-500/20">
                    {activity.type}
                 </span>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors duration-300">{activity.title}</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3">{activity.description}</p>
+                <h3 className="text-xl font-bold text-text-heading mb-2 group-hover:text-accent-primary dark:group-hover:text-accent-secondary transition-colors duration-300">{activity.title}</h3>
+                <p className="text-text-body dark:text-text-muted text-sm line-clamp-3">{activity.description}</p>
               </div>
             </motion.div>
           ))}
